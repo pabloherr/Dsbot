@@ -11,6 +11,8 @@ class Shop(commands.Cog):
         self.db = self.mongo_client["discord"] 
         self.collection = self.db["shop"]
     
+    
+    # Show the shop
     @commands.command()
     async def shop(self, ctx):
         await ctx.send("Welcome to the shop! Here you can buy Pipos with your cash.")
@@ -24,6 +26,8 @@ class Shop(commands.Cog):
         for i, pipo in enumerate(self.collection.find()):
             await ctx.send(f"{i+1}. {pipo["name"]} {pipo["rarity"]} \n{pipo["hp"]} HP \n{pipo["attack"]}ATK \n{pipo["defense"]} DEF \n{pipo["speed"]} SPD \nPrice: 1 cash\n\n")
     
+    
+    # Buy a pipo
     @commands.command()
     async def buy(self, ctx, pipo_number):
         pipo = self.collection.find_one({"name": pipo_number})
