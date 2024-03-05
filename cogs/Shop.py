@@ -16,10 +16,29 @@ class Shop(commands.Cog):
         await ctx.send("Welcome to the shop! Here you can buy Pipos with your cash.")
         await ctx.send("Type !buy and de number of the pipo to buy it.")
         await ctx.send("Here are the Pipos available:")
-        for i in range(2):
-            await ctx.send(random_pipo())
-            self.collection.insert_one(random_pipo())
-
+        if self.collection.count_documents({}) < 3:
+            r = 3 - self.collection.count_documents({})
+            for i in range(r):
+                pipo = await random_pipo()
+                self.collection.insert_one(pipo)
+        for i, pipo in enumerate(self.collection.find()):
+            await ctx.send(f"{i+1}. {pipo["name"]} {pipo["rarity"]} \n{pipo["hp"]} HP \n{pipo["attack"]}ATK \n{pipo["defense"]} DEF \n{pipo["speed"]} SPD \nPrice: 1 cash\n\n")
+    
+    @commands.command()
+    async def buy(self, ctx, pipo_number):
+        pipo = self.collection.find_one({"name": pipo_number})
+        if pipo is None:
+            await ctx.send("Pipo not found")
+            return
+        user = self.db["users"].find_one({"id": ctx.author.id})
+        if user["cash"] < 1:
+            await ctx.send("Not enough cash")
+            return
+        user["cash"] -= 1
+        user["pipos"].append(pipo)
+        self.db["users"].update_one({"id": ctx.author.id}, {"$set": user})
+        self.collection.delete_one({"name": pipo_number})
+        await ctx.send(f"{pipo["name"]} bought!")
 
 async def setup(client):
     await client.add_cog(Shop(client))

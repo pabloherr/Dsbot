@@ -20,6 +20,7 @@ class Users(commands.Cog):
         user = User( id = ctx.author.id)
         self.collection.insert_one(user.dict())
         await ctx.send('Usuario creado!')
+        
 
 async def setup(client):
     await client.add_cog(Users(client))
