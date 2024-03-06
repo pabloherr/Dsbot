@@ -29,7 +29,7 @@ class Shop(commands.Cog):
     
     # Buy a pipo
     @commands.command()
-    async def buy(self, ctx, pipo_number):
+    async def buy(self, ctx, pipo_number: int):
         pipo = self.collection.find_one({"name": pipo_number})
         if pipo is None:
             await ctx.send("Pipo not found")

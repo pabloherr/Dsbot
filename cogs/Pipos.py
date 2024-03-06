@@ -14,7 +14,7 @@ class Pipos(commands.Cog):
 
     # Rename the pipos
     @commands.command()
-    async def rename(self, ctx, pipo_name, new_name):
+    async def rename(self, ctx, pipo_name: str, new_name: str):
         user = self.db["users"].find_one({"id": ctx.author.id})
         pipo = next((pipo for pipo in user["pipos"] if pipo["name"] == pipo_name), None)
         if pipo is None:
@@ -26,7 +26,7 @@ class Pipos(commands.Cog):
         
         
     @commands.command()
-    async def combat(self, ctx, pipo_name):
+    async def combat(self, ctx, pipo_name: str):
         user1 = self.db["users"].find_one({"id": ctx.author.id})
         user2 = self.db["users"].find_one({"id": ctx.message.mentions[0].id})
         pipo1 = next((pipo for pipo in user1["pipos"] if pipo["name"] == pipo_name), None)
@@ -91,7 +91,7 @@ async def setup(client):
     await client.add_cog(Pipos(client))
     
 
-async def fight(pipo1, pipo2):
+async def fight(pipo1: dict, pipo2: dict) -> int:
     print(pipo1)
     if pipo2["defence"] > pipo1["attack"]:
         dmg = pipo2["hp"] - cl(pipo1["attack"]/4)
