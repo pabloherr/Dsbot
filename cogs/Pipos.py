@@ -26,77 +26,115 @@ class Pipos(commands.Cog):
         
         
     @commands.command()
-    async def combat(self, ctx, pipo_name: str):
+    async def combat(self, ctx, pipo_name: str, pipo_name2: str):
         user1 = self.db["users"].find_one({"id": ctx.author.id})
         user2 = self.db["users"].find_one({"id": ctx.message.mentions[0].id})
         pipo1 = next((pipo for pipo in user1["pipos"] if pipo["name"] == pipo_name), None)
+        pipo2 = next((pipo for pipo in user2["pipos"] if pipo["name"] == pipo_name2), None)
+        
         if pipo1 is None:
-            await ctx.send("Pipo not found")
+            await ctx.send("Pipo1 not found")
             return
-        else:
-            await ctx.send(f"{pipo1['name']} is ready to fight!")
-        pipo2 = random.choice(user2["pipos"])
+        if pipo2 is None:
+            await ctx.send("Pipo2 not found")
+            return
+
+        await ctx.send(f"{pipo1['name']} is ready to fight!")
         await ctx.send(f"{pipo2['name']} is ready to fight!")
         turn1 = 0
         turn2 = 0
         pipo1_hp = pipo1["hp"]
         pipo2_hp = pipo2["hp"]
+        round = 0
         while pipo1["hp"] > 0 and pipo2["hp"] > 0:
+            round +=1
+            await ctx.send(f"ROUND: {round}")
             turn1 += pipo1["speed"]
             turn2 += pipo2["speed"]
+            
             if turn1 >= 12 or turn2 >= 12:
                 if turn1 >= 12 and turn2 < 12:
                     turn1 = 0
                     dmg = await fight(pipo1, pipo2)
-                    await ctx.send(dmg)
                     pipo2["hp"] -= dmg
+                    await ctx.send(f"   {pipo1['name']} attacks!")
                     
                 if turn2 >= 12 and turn1 < 12:
                     turn2 = 0
                     dmg = await fight(pipo2, pipo1)
                     pipo1["hp"] -= dmg
+                    await ctx.send(f"   {pipo2['name']} attacks!")
                     
                 if turn1 >= 12 and turn2 >= 12:
+                    
                     if pipo1["speed"] > pipo2["speed"]:
                         turn1 = 0
+                        turn2 = 0
                         dmg = await fight(pipo1, pipo2)
                         pipo2["hp"] -= dmg
+                        dmg = await fight(pipo2, pipo1)
+                        pipo1["hp"] -= dmg
+                        await ctx.send(f"   {pipo1['name']} it's faster!")
+                        
                     elif pipo1["speed"] < pipo2["speed"]:
+                        turn1 = 0
                         turn2 = 0
                         dmg = await fight(pipo2, pipo1)
-                        pipo1_hp -= dmg
+                        pipo1["hp"] -= dmg
+                        dmg = await fight(pipo1, pipo2)
+                        pipo2["hp"] -= dmg
+                        await ctx.send(f"   {pipo2['name']} it's faster!")
                         
                     else:
+                        await ctx.send("    Speed tie!")
                         r = random.randint(0, 1)
                         if r == 0:
                             turn1 = 0
+                            turn2 = 0
                             dmg = await fight(pipo1, pipo2)
                             pipo2["hp"] -= dmg
+                            
+                            if pipo2["hp"] > 0:
+                                dmg = await fight(pipo2, pipo1)
+                                pipo1["hp"] -= dmg
+
+                            await ctx.send(f"   {pipo1['name']} attacks fist!")
                         else:
+                            turn1 = 0
                             turn2 = 0
                             dmg = await fight(pipo2, pipo1)
                             pipo1["hp"] -= dmg
                             
-                await ctx.send(f"{pipo1['name']} HP: {pipo1["hp"]} {pipo2['name']} HP: {pipo2["hp"]}")
+                            if pipo1["hp"] > 0:
+                                dmg = await fight(pipo1, pipo2)
+                                pipo2["hp"] -= dmg
+                                
+                            await ctx.send(f"   {pipo2['name']} attacks fist!")
+                            
+                            
+                await ctx.send(f"   {pipo1['name']} HP: {pipo1["hp"]} {pipo2['name']} HP: {pipo2["hp"]}")
+        
+        await ctx.send("COMBAT ENDED!")
         if pipo1["hp"] <= 0:
-            await ctx.send(f"{pipo1['name']} fainted!")
-            await ctx.send(f"{pipo2['name']} wins!")
+            await ctx.send(f"   {pipo1['name']} fainted!")
+            await ctx.send(f"   {pipo2['name']} wins!")
         else:
-            await ctx.send(f"{pipo2['name']} fainted!")
-            await ctx.send(f"{pipo1['name']} wins!")
-            
-            
-
+            await ctx.send(f"   {pipo2['name']} fainted!")
+            await ctx.send(f"   {pipo1['name']} wins!")
+        pipo1["hp"] = pipo1_hp
+        pipo2["hp"] = pipo2_hp
+        
 async def setup(client):
     await client.add_cog(Pipos(client))
     
 
-async def fight(pipo1: dict, pipo2: dict) -> int:
-    print(pipo1)
-    if pipo2["defence"] > pipo1["attack"]:
-        dmg = pipo2["hp"] - cl(pipo1["attack"]/4)
-        return dmg
-    elif pipo2["defence"] == pipo1["attack"]:
-        return pipo2["hp"] - cl(pipo1["attack"]/2)
+async def fight(pipoatk: dict, pipodef: dict) -> int:
+    
+    if pipodef['defense'] > pipoatk['attack']:
+        return cl(pipoatk['attack']/4)
+    
+    elif pipodef['defense'] == pipoatk['attack']:
+        return cl(pipoatk['attack']/2)
+    
     else:
-        return pipo2["hp"] - pipo1["attack"]
+        return pipoatk['attack']
