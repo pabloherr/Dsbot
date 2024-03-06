@@ -24,8 +24,8 @@ class Shop(commands.Cog):
                 pipo = await random_pipo()
                 self.collection.insert_one(pipo)
         for i, pipo in enumerate(self.collection.find()):
-            await ctx.send(f"{i+1}. {pipo["name"]} {pipo["rarity"]} \n{pipo["hp"]} HP \n{pipo["attack"]}ATK \n{pipo["defense"]} DEF \n{pipo["speed"]} SPD \nPrice: 1 cash\n\n")
-    
+            await ctx.send(f"{i+1}. {pipo["name"]} {pipo["rarity"]} \n{pipo["hp"]} HP \n{pipo["attack"]}ATK \n{pipo["defense"]} DEF \n{pipo["speed"]} SPD \nPrice:{pipo["price"]}\n\n")
+        await ctx.send("Type !restock to restock the shop for 10 cash.")
     
     # Buy a pipo
     @commands.command()
@@ -43,23 +43,43 @@ class Shop(commands.Cog):
         self.db["users"].update_one({"id": ctx.author.id}, {"$set": user})
         self.collection.delete_one({"name": pipo_number})
         await ctx.send(f"{pipo["name"]} bought!")
+    
+    # Restock the shop
+    @commands.command()
+    async def restock(self, ctx):
+        if self.db["users"].find_one({"id": ctx.author.id})["cash"] < 10:
+            await ctx.send("Not enough cash")
+            return
+        self.collection.delete_many({})
+        for i in range(3):
+            pipo = await random_pipo()
+            self.collection.insert_one(pipo)
+        user = self.db["users"].find_one({"id": ctx.author.id})
+        user["cash"] -= 10
+        await ctx.send("Shop restocked!")
 
 async def setup(client):
     await client.add_cog(Shop(client))
 
 # Funtion to create a new pipo
 async def random_pipo() -> Pipo:
-    rarity = random.choice(["common", "uncommon", "rare"])
+    rarity = random.choices(["common", "uncommon", "rare", "legendary"], weights=[60, 30, 10, 3], k=1)[0]
     if rarity == "common":
         stats = [1, 1, 2, 3]
+        price = 2
     elif rarity == "uncommon":
         stats = [1, 1, 2, 4]
-    else:
+        price = 4
+    elif rarity == "rare":
         stats = [2, 2, 3, 4]
+        price = 8
+    else:
+        stats = [2, 3, 4, 4]
+        price = 16
     random.shuffle(stats)
     pipo_name = "Pipo_" + str(random.randint(1, 100))
     
-    pipo = Pipo(rarity=rarity, name=pipo_name,
+    pipo = Pipo(rarity=rarity,price=price, name=pipo_name,
                 hp=5+stats[0], attack=stats[1], 
                 defense=stats[2], speed=stats[3])
     return pipo.dict()
