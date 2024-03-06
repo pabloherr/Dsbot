@@ -43,5 +43,6 @@ class Users(commands.Cog):
         for pipo in user['pipos']:
             await ctx.send(f"{pipo['name']} {pipo['rarity']} \n{pipo['hp']} HP \n{pipo['attack']} ATK \n{pipo['defense']} DEF \n{pipo['speed']} SPD")
 
+
 async def setup(client):
     await client.add_cog(Users(client))
