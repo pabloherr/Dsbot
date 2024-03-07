@@ -5,6 +5,7 @@ from discord.ext import commands
 from pydantic import BaseModel
 from database import db_client
 from models.pipo import Pipo
+from tools import fight
 
 class Pipos(commands.Cog):
     def __init__(self, client):
@@ -48,13 +49,14 @@ class Pipos(commands.Cog):
         round = 0
         
         while pipo1["hp"] > 0 and pipo2["hp"] > 0:
-            round +=1
-            await ctx.send(f"ROUND: {round}")
+            await ctx.send(f".")
             turn1 += pipo1["speed"]
             turn2 += pipo2["speed"]
             
             #fight
             if turn1 >= 12 or turn2 >= 12:
+                round +=1
+                await ctx.send(f"ROUND {round}")
                 
                 #pipo1 attacks
                 if turn1 >= 12 and turn2 < 12:
@@ -144,43 +146,3 @@ class Pipos(commands.Cog):
         
 async def setup(client):
     await client.add_cog(Pipos(client))
-    
-
-async def fight(pipoatk: dict, pipodef: dict) -> int:
-    lethal = 0
-    if pipoatk['passive'] == "Feel No Pain":
-        feel = True
-    if pipoatk['passive'] == "Lethal Hits":
-        lethal = 2
-    
-    if pipodef['passive'] == "Invulnerable":
-        inv = random.randint(0, 1)
-        if inv == 0:
-            return 0
-        return pipoatk['attack']
-    
-    if pipodef['defense'] > pipoatk['attack']+lethal:
-        dmg = cl(pipoatk['attack']/4)
-        if feel:
-            for i in range(dmg):
-                r = random.randint(1, 6)
-                if r == 6:
-                    dmg -= 1
-        return dmg
-    
-    elif pipodef['defense'] == pipoatk['attack']+lethal:
-        dmg =  cl(pipoatk['attack']/2)
-        if feel:
-            for i in range(dmg):
-                r = random.randint(1, 6)
-                if r == 6:
-                    dmg -= 1
-        return dmg
-    else:
-        dmg =  pipoatk['attack']
-        if feel:
-            for i in range(dmg):
-                r = random.randint(1, 6)
-                if r == 6:
-                    dmg -= 1
-        return dmg

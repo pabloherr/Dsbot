@@ -3,6 +3,7 @@ import random
 from discord.ext import commands
 from database import db_client
 from models.pipo import Pipo
+from tools import random_pipo
 
 class Shop(commands.Cog):
     def __init__(self, client):
@@ -60,27 +61,3 @@ class Shop(commands.Cog):
 
 async def setup(client):
     await client.add_cog(Shop(client))
-
-# Funtion to create a new pipo
-async def random_pipo() -> Pipo:
-    rarity = random.choices(["common", "uncommon", "rare", "legendary"], weights=[60, 30, 10, 3], k=1)[0]
-    passive = random.choice(["None", "Invulnerable","Feel No Pain", "Lethal Hits", "Fight First"])
-    if rarity == "common":
-        stats = [1, 1, 2, 3]
-        price = 2
-    elif rarity == "uncommon":
-        stats = [1, 1, 2, 4]
-        price = 4
-    elif rarity == "rare":
-        stats = [2, 2, 3, 4]
-        price = 8
-    else:
-        stats = [2, 3, 4, 4]
-        price = 16
-    random.shuffle(stats)
-    pipo_name = "Pipo_" + str(random.randint(1, 100))
-    
-    pipo = Pipo(rarity=rarity,price=price, name=pipo_name,
-                hp=5+stats[0], attack=stats[1], 
-                defense=stats[2], speed=stats[3], passive=passive)
-    return pipo.dict()
