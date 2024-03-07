@@ -24,12 +24,12 @@ class Shop(commands.Cog):
                 pipo = await random_pipo()
                 self.collection.insert_one(pipo)
         for i, pipo in enumerate(self.collection.find()):
-            await ctx.send(f"{i+1}. {pipo["name"]} {pipo["rarity"]} \n{pipo["hp"]} HP \n{pipo["attack"]}ATK \n{pipo["defense"]} DEF \n{pipo["speed"]} SPD \nPrice:{pipo["price"]}\n\n")
+            await ctx.send(f"{i+1}. {pipo["name"]} {pipo["rarity"]} \n{pipo["hp"]} HP \n{pipo["attack"]}ATK \n{pipo["defense"]} DEF \n{pipo["speed"]} SPD \n Passive:{pipo["passive"]} \nPrice:{pipo["price"]}\n\n")
         await ctx.send("Type !restock to restock the shop for 10 cash.")
     
     # Buy a pipo
     @commands.command()
-    async def buy(self, ctx, pipo_number: int):
+    async def buy(self, ctx, pipo_number: str):
         pipo = self.collection.find_one({"name": pipo_number})
         if pipo is None:
             await ctx.send("Pipo not found")
@@ -64,6 +64,7 @@ async def setup(client):
 # Funtion to create a new pipo
 async def random_pipo() -> Pipo:
     rarity = random.choices(["common", "uncommon", "rare", "legendary"], weights=[60, 30, 10, 3], k=1)[0]
+    passive = random.choice(["None", "Invulnerable","Feel No Pain", "Lethal Hits", "Fight First"])
     if rarity == "common":
         stats = [1, 1, 2, 3]
         price = 2
@@ -81,5 +82,5 @@ async def random_pipo() -> Pipo:
     
     pipo = Pipo(rarity=rarity,price=price, name=pipo_name,
                 hp=5+stats[0], attack=stats[1], 
-                defense=stats[2], speed=stats[3])
+                defense=stats[2], speed=stats[3], passive=passive)
     return pipo.dict()

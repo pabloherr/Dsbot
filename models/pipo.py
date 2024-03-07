@@ -8,3 +8,4 @@ class Pipo(BaseModel):
     attack: int
     defense: int
     speed: int
+    passive: str
