@@ -32,7 +32,7 @@ async def random_pipo( wild = False) -> Pipo:
 
 # Command to create a wild pipo
 async def wild(zone: str = "forest") -> dict:
-    if zone not in ["forest", "desert", "mountain"]:
+    if zone not in ["forest", "desert", "mountain", "megaforest", "megadesert", "megamountain"]:
         return "Invalid zone"
     pipo = await random_pipo(wild=True)
     if zone == "forest":
@@ -47,19 +47,35 @@ async def wild(zone: str = "forest") -> dict:
             stat1 = random.choice(["hp", "attack", "defense", "speed"])
             stat2 = random.choice(["hp", "attack", "defense", "speed"])
             pipo = await lvlup(pipo, stat1, stat2)
-    else:
+    elif zone == "mountain":
         lvl = random.randint(6, 9)
+        for i in range(lvl):
+            stat1 = random.choice(["hp", "attack", "defense", "speed"])
+            stat2 = random.choice(["hp", "attack", "defense", "speed"])
+            pipo = await lvlup(pipo, stat1, stat2)
+    elif zone == "megaforest":
+        lvl = 10
+        for i in range(lvl):
+            stat1 = random.choice(["hp", "attack", "defense", "speed"])
+            stat2 = random.choice(["hp", "attack", "defense", "speed"])
+            pipo = await lvlup(pipo, stat1, stat2)
+    elif zone == "megadesert":
+        lvl = 20
+        for i in range(lvl):
+            stat1 = random.choice(["hp", "attack", "defense", "speed"])
+            stat2 = random.choice(["hp", "attack", "defense", "speed"])
+            pipo = await lvlup(pipo, stat1, stat2)
+    elif zone == "megamountain":
+        lvl = 30
         for i in range(lvl):
             stat1 = random.choice(["hp", "attack", "defense", "speed"])
             stat2 = random.choice(["hp", "attack", "defense", "speed"])
             pipo = await lvlup(pipo, stat1, stat2)
     return pipo
 
+
 # Command to level up the pipos
 async def lvlup(pipo: dict, stat1: str, stat2: str) -> dict:
-    
-    lvl = {1:0, 2:10, 3:30, 4:60, 5:120, 6:240, 7:480, 8:960, 9:1920, 10:3840}
-
     
     if stat1 == "hp":
         pipo["max_hp"] += 1

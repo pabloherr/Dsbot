@@ -7,7 +7,7 @@ class Combat(commands.Cog):
     def __init__(self, client):
         self.client = client
         self.mongo_client = db_client
-        self.db = self.mongo_client["discord"] 
+        self.db = self.mongo_client["discord"]
 
 
     #combat defender
@@ -28,7 +28,7 @@ class Combat(commands.Cog):
         await ctx.send(f"{pipo1['name']} is ready to fight!")
         await ctx.send(f"{pipo2['name']} is ready to fight!")
         await self.fight(ctx, pipo1, pipo2)
-        
+    
     #combat wild pipo
     @commands.command()
     async def wild_combat(self, ctx, pipo_name: str, zone: str):
@@ -48,6 +48,39 @@ class Combat(commands.Cog):
         winner = await self.fight(ctx, pipo1, pipo2)
         if winner == 'pipo2':
             self.db["wild_pipos"].insert_one(pipo2)
+    
+    #combat other user
+    @commands.command()
+    async def combat(self, ctx, pipo1: str, pipo2:str):
+        await ctx.send(f'{ctx.message.mentions[0].name} confirm the fight with yes or no')
+        def check(m):
+            return m.author == ctx.message.mentions[0] and m.content.lower() in ['yes', 'no']
+        
+        try:
+            msg = await self.client.wait_for('message', check=check, timeout=30)
+        except TimeoutError:
+            await ctx.send('Timeout')
+            return
+        if msg.content.lower() == 'no':
+            await ctx.send('Combat canceled')
+            return
+        await ctx.send(f'{ctx.message.mentions[0].name} accepted the fight')
+        
+        user1 = self.db["users"].find_one({"id": ctx.author.id})
+        user2 = self.db["users"].find_one({"id": ctx.message.mentions[0].id})
+        pipo1 = next((pipo for pipo in user1["pipos"] if pipo["name"] == pipo1), None)
+        pipo2 = next((pipo for pipo in user2["pipos"] if pipo["name"] == pipo2), None)
+        
+        if pipo1 is None:
+            await ctx.send("Pipo1 not found")
+            return
+        if pipo2 is None:
+            await ctx.send("Pipo2 not found")
+            return
+        
+        await ctx.send(f"{pipo1['name']} is ready to fight!")
+        await ctx.send(f"{pipo2['name']} is ready to fight!")
+        await self.fight(ctx, pipo1, pipo2)
     
     
     

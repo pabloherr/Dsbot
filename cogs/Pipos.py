@@ -1,8 +1,9 @@
 import random
-from discord.ext import commands
+import datetime
+from discord.ext import commands, tasks
 from database import db_client
 from models.pipo import Pipo
-from tools import lvlup
+from tools import lvlup, wild
 
 class Pipos(commands.Cog):
     def __init__(self, client):
@@ -10,7 +11,13 @@ class Pipos(commands.Cog):
         self.mongo_client = db_client
         self.db = self.mongo_client["discord"]
         self.collection = self.db["wild_pipos"]
-
+        self.collection2 = self.db["mega_pipos"]
+        self.mega_pipo.start()
+        
+    def cog_unload(self):
+        self.mega_pipo.cancel()
+    
+    
     # Rename the pipos
     @commands.command()
     async def rename(self, ctx, pipo_name: str, new_name: str):
@@ -62,6 +69,22 @@ class Pipos(commands.Cog):
         pipos = self.collection.find({})
         for pipo in pipos:
             await ctx.send(f"{pipo['name']} \n{pipo['rarity']} \nLvl: {pipo['lvl']}")
+    
+    # Weekly wild mega pipo
+    @tasks.loop(minutes=1)
+    async def mega_pipo(self):
+        if  self.collection2.count_documents({}) > 0:
+            self.collection2.delete_many({})
+        mega_zone = ["megaforest", "megadesert", "megamountain"] 
+        for zone in mega_zone:
+            pipo = await wild(zone)
+            self.collection2.insert_one(pipo)
+            self.collection2.update_one({"name": pipo["name"]}, {"$set": {"name": f"Mega {pipo['name']}"}})
+
+    @commands.command()
+    async def mega(self, ctx):
+        pipos = await wild("megaforest")
+        await ctx.send(f"{pipos}")
     
 async def setup(client):
     await client.add_cog(Pipos(client))

@@ -58,6 +58,7 @@ class Shop(commands.Cog):
         user = self.db["users"].find_one({"id": ctx.author.id})
         user["cash"] -= 10
         await ctx.send("Shop restocked!")
+        await self.shop(ctx)
 
 async def setup(client):
     await client.add_cog(Shop(client))
