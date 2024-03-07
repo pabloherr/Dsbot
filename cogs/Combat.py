@@ -1,7 +1,7 @@
 import random
 from discord.ext import commands
 from database import db_client
-from tools import fight, random_pipo
+from tools import damage, wild
 
 class Combat(commands.Cog):
     def __init__(self, client):
@@ -29,12 +29,29 @@ class Combat(commands.Cog):
         await ctx.send(f"{pipo2['name']} is ready to fight!")
         await self.fight(ctx, pipo1, pipo2)
         
+    #combat wild pipo
+    @commands.command()
+    async def wild_combat(self, ctx, pipo_name: str, zone: str):
+        user = self.db["users"].find_one({"id": ctx.author.id})
+        pipo1 = next((pipo for pipo in user["pipos"] if pipo["name"] == pipo_name), None)
+        pipo2 = await wild(zone)
+        await ctx.send(pipo2)
+        if pipo2 == "Invalid zone":
+            await ctx.send("Invalid zone")
+            return
+        if pipo1 is None:
+            await ctx.send("Pipo1 not found")
+            return
+        
+        await ctx.send(f"{pipo1['name']} is ready to fight!")
+        await ctx.send(f"{pipo2['name']} is ready to fight!")
+        winner = await self.fight(ctx, pipo1, pipo2)
+        if winner == 'pipo2':
+            self.db["wild_pipos"].insert_one(pipo2)
     
     
     
-    
-    
-    
+    #combat pipo vs pipo
     async def fight(self, ctx, pipo1, pipo2):
         turn1 = 0
         turn2 = 0
@@ -55,14 +72,14 @@ class Combat(commands.Cog):
                 #pipo1 attacks
                 if turn1 >= 12 and turn2 < 12:
                     turn1 = 0
-                    dmg = await fight(pipo1, pipo2)
+                    dmg = await damage(pipo1, pipo2)
                     pipo2["hp"] -= dmg
                     await ctx.send(f"   {pipo1['name']} attacks!")
                     
                 #pipo2 attacks
                 if turn2 >= 12 and turn1 < 12:
                     turn2 = 0
-                    dmg = await fight(pipo2, pipo1)
+                    dmg = await damage(pipo2, pipo1)
                     pipo1["hp"] -= dmg
                     await ctx.send(f"   {pipo2['name']} attacks!")
                     
@@ -78,9 +95,9 @@ class Combat(commands.Cog):
                     if p1_vel > p2_vel:
                         turn1 = 0
                         turn2 = 0
-                        dmg = await fight(pipo1, pipo2)
+                        dmg = await damage(pipo1, pipo2)
                         pipo2["hp"] -= dmg
-                        dmg = await fight(pipo2, pipo1)
+                        dmg = await damage(pipo2, pipo1)
                         pipo1["hp"] -= dmg
                         await ctx.send(f"   {pipo1['name']} it's faster!")
                         
@@ -88,9 +105,9 @@ class Combat(commands.Cog):
                     elif p1_vel < p2_vel:
                         turn1 = 0
                         turn2 = 0
-                        dmg = await fight(pipo2, pipo1)
+                        dmg = await damage(pipo2, pipo1)
                         pipo1["hp"] -= dmg
-                        dmg = await fight(pipo1, pipo2)
+                        dmg = await damage(pipo1, pipo2)
                         pipo2["hp"] -= dmg
                         await ctx.send(f"   {pipo2['name']} it's faster!")
                     
@@ -103,11 +120,11 @@ class Combat(commands.Cog):
                         if r == 0:
                             turn1 = 0
                             turn2 = 0
-                            dmg = await fight(pipo1, pipo2)
+                            dmg = await damage(pipo1, pipo2)
                             pipo2["hp"] -= dmg
                             
                             if pipo2["hp"] > 0:
-                                dmg = await fight(pipo2, pipo1)
+                                dmg = await damage(pipo2, pipo1)
                                 pipo1["hp"] -= dmg
                                 
                             await ctx.send(f"   {pipo1['name']} attacks fist!")
@@ -116,11 +133,11 @@ class Combat(commands.Cog):
                         else:
                             turn1 = 0
                             turn2 = 0
-                            dmg = await fight(pipo2, pipo1)
+                            dmg = await damage(pipo2, pipo1)
                             pipo1["hp"] -= dmg
                             
                             if pipo1["hp"] > 0:
-                                dmg = await fight(pipo1, pipo2)
+                                dmg = await damage(pipo1, pipo2)
                                 pipo2["hp"] -= dmg
                                 
                             await ctx.send(f"   {pipo2['name']} attacks fist!")
@@ -128,15 +145,20 @@ class Combat(commands.Cog):
                             
                 await ctx.send(f"   {pipo1['name']} HP: {pipo1['hp']} {pipo2['name']} HP: {pipo2['hp']}")
         
+        
         await ctx.send("COMBAT ENDED!")
         if pipo1["hp"] <= 0:
             await ctx.send(f"   {pipo1['name']} fainted!")
             await ctx.send(f"   {pipo2['name']} wins!")
+            pipo1["hp"] = pipo1_hp
+            pipo2["hp"] = pipo2_hp
+            return 'pipo2'
         else:
             await ctx.send(f"   {pipo2['name']} fainted!")
             await ctx.send(f"   {pipo1['name']} wins!")
-        pipo1["hp"] = pipo1_hp
-        pipo2["hp"] = pipo2_hp
+            pipo1["hp"] = pipo1_hp
+            pipo2["hp"] = pipo2_hp
+            return 'pipo1'
 
 async def setup(client):
     await client.add_cog(Combat(client))
