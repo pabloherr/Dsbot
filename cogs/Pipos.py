@@ -1,17 +1,15 @@
-import discord
 import random
-from math import ceil as cl
 from discord.ext import commands
-from pydantic import BaseModel
 from database import db_client
 from models.pipo import Pipo
-from tools import fight
+from tools import fight, random_pipo
 
 class Pipos(commands.Cog):
     def __init__(self, client):
         self.client = client
         self.mongo_client = db_client
-        self.db = self.mongo_client["discord"] 
+        self.db = self.mongo_client["discord"]
+        self.collection = self.db["wild_pipos"]
 
     # Rename the pipos
     @commands.command()
@@ -24,125 +22,101 @@ class Pipos(commands.Cog):
         pipo["name"] = new_name
         self.db["users"].update_one({"id": ctx.author.id}, {"$set": user})
         await ctx.send(f"{pipo_name} renamed to {new_name}")
-        
-    #combat pipos
+
+    #Lvl up the pipos
     @commands.command()
-    async def combat(self, ctx, pipo_name: str):
-        user1 = self.db["users"].find_one({"id": ctx.author.id})
-        user2 = self.db["users"].find_one({"id": ctx.message.mentions[0].id})
-        pipo1 = next((pipo for pipo in user1["pipos"] if pipo["name"] == pipo_name), None)
-        pipo2 = user2["defender"]
+    async def lvlup(self, ctx, pipo_name: str, stat1, stat2):
         
-        if pipo1 is None:
-            await ctx.send("Pipo1 not found")
-            return
-        if pipo2 is None:
-            await ctx.send("Pipo2 not found")
-            return
+        lvl = {1:0, 2:10, 3:30, 4:60, 5:120, 6:240, 7:480, 8:960, 9:1920, 10:3840}
         
-        await ctx.send(f"{pipo1['name']} is ready to fight!")
-        await ctx.send(f"{pipo2['name']} is ready to fight!")
-        turn1 = 0
-        turn2 = 0
-        pipo1_hp = pipo1["hp"]
-        pipo2_hp = pipo2["hp"]
-        round = 0
+        if self.collection.find_one({"name": pipo_name}) is None:
         
-        while pipo1["hp"] > 0 and pipo2["hp"] > 0:
-            await ctx.send(f".")
-            turn1 += pipo1["speed"]
-            turn2 += pipo2["speed"]
-            
-            #fight
-            if turn1 >= 12 or turn2 >= 12:
-                round +=1
-                await ctx.send(f"ROUND {round}")
-                
-                #pipo1 attacks
-                if turn1 >= 12 and turn2 < 12:
-                    turn1 = 0
-                    dmg = await fight(pipo1, pipo2)
-                    pipo2["hp"] -= dmg
-                    await ctx.send(f"   {pipo1['name']} attacks!")
-                    
-                #pipo2 attacks
-                if turn2 >= 12 and turn1 < 12:
-                    turn2 = 0
-                    dmg = await fight(pipo2, pipo1)
-                    pipo1["hp"] -= dmg
-                    await ctx.send(f"   {pipo2['name']} attacks!")
-                    
-                #both attack
-                if turn1 >= 12 and turn2 >= 12:
-                    p1_vel = pipo1["speed"]
-                    p2_vel = pipo2["speed"]
-                    if pipo1["passive"] == "Fight Fist":
-                        p1_vel += 20
-                    if pipo2["passive"] == "Fight Fist":
-                        p2_vel += 20
-                    #pipo1 faster
-                    if p1_vel > p2_vel:
-                        turn1 = 0
-                        turn2 = 0
-                        dmg = await fight(pipo1, pipo2)
-                        pipo2["hp"] -= dmg
-                        dmg = await fight(pipo2, pipo1)
-                        pipo1["hp"] -= dmg
-                        await ctx.send(f"   {pipo1['name']} it's faster!")
-                        
-                    #pipo2 faster
-                    elif p1_vel < p2_vel:
-                        turn1 = 0
-                        turn2 = 0
-                        dmg = await fight(pipo2, pipo1)
-                        pipo1["hp"] -= dmg
-                        dmg = await fight(pipo1, pipo2)
-                        pipo2["hp"] -= dmg
-                        await ctx.send(f"   {pipo2['name']} it's faster!")
-                    
-                    #speed tie
-                    else:
-                        await ctx.send("    Speed tie!")
-                        r = random.randint(0, 1)
-                        
-                        #pipo1 attacks first
-                        if r == 0:
-                            turn1 = 0
-                            turn2 = 0
-                            dmg = await fight(pipo1, pipo2)
-                            pipo2["hp"] -= dmg
-                            
-                            if pipo2["hp"] > 0:
-                                dmg = await fight(pipo2, pipo1)
-                                pipo1["hp"] -= dmg
-                                
-                            await ctx.send(f"   {pipo1['name']} attacks fist!")
-                        
-                        #pipo2 attacks first
-                        else:
-                            turn1 = 0
-                            turn2 = 0
-                            dmg = await fight(pipo2, pipo1)
-                            pipo1["hp"] -= dmg
-                            
-                            if pipo1["hp"] > 0:
-                                dmg = await fight(pipo1, pipo2)
-                                pipo2["hp"] -= dmg
-                                
-                            await ctx.send(f"   {pipo2['name']} attacks fist!")
-                            
-                            
-                await ctx.send(f"   {pipo1['name']} HP: {pipo1["hp"]} {pipo2['name']} HP: {pipo2["hp"]}")
-        
-        await ctx.send("COMBAT ENDED!")
-        if pipo1["hp"] <= 0:
-            await ctx.send(f"   {pipo1['name']} fainted!")
-            await ctx.send(f"   {pipo2['name']} wins!")
+            user = self.db["users"].find_one({"id": ctx.author.id})
+            pipo = next((pipo for pipo in user["pipos"] if pipo["name"] == pipo_name), None)
+            if pipo is None:
+                await ctx.send("Pipo not found")
+                return
+
+            if pipo["lvl"] == 10:
+                await ctx.send("Pipo is max lvl")
+                return
+
+            if pipo["exp"] < lvl[pipo["lvl"]]:
+                await ctx.send("Not enough exp")
+                return
         else:
-            await ctx.send(f"   {pipo2['name']} fainted!")
-            await ctx.send(f"   {pipo1['name']} wins!")
-        pipo1["hp"] = pipo1_hp
-        pipo2["hp"] = pipo2_hp
+            pipo = self.collection.find_one({"name": pipo_name})
+            
+        if stat1 not in ["hp", "attack", "defense", "speed"] or stat2 not in ["hp", "attack", "defense", "speed"]:
+            await ctx.send("Invalid stats")
+            return
         
+        if stat1 == stat2:
+            await ctx.send("Stats must be different")
+            return
+        
+        if stat1 == "hp":
+            pipo["max_hp"] += 1
+            stat1 = "max_hp"
+        elif stat2 == "hp":
+            pipo["max_hp"] += 1
+            stat2 = "max_hp"
+        pipo[stat1] += 1
+        pipo[stat2] += 1
+        pipo["hp"] = pipo["max_hp"]
+        pipo["lvl"] += 1
+        pipo["exp"] = 0
+        if self.collection.find_one({"name": pipo_name}) is None:
+            self.db["users"].update_one({"id": ctx.author.id}, {"$set": user})
+            await ctx.send(f"{pipo_name} lvl up to {pipo['lvl']}")
+        else:
+            self.collection.update_one({"name": pipo_name}, {"$set": pipo})
+
+    # Command to create a wild pipo
+    @commands.command()
+    async def wild(self, ctx, zone: str = "forest"):
+        
+        if zone not in ["forest", "desert", "mountain"]:
+            await ctx.send("Invalid zone")
+            await ctx.send("Valid zones: forest, desert, mountain")
+            return
+        pipo = await random_pipo(wild=True)
+        self.collection.insert_one(pipo)
+        pipo = self.collection.find_one({"name": pipo["name"]})
+        if zone == "forest":
+            lvl = random.randint(1, 3)
+            for i in range(lvl-1):
+                stat1 = random.choice(["hp", "attack", "defense", "speed"])
+                stat2 = random.choice(["hp", "attack", "defense", "speed"])
+                while stat1 == stat2:
+                    stat2 = random.choice(["hp", "attack", "defense", "speed"])
+                await self.lvlup(ctx, pipo["name"], stat1, stat2)
+        elif zone == "desert":
+            lvl = random.randint(3, 5)
+            for i in range(lvl):
+                stat1 = random.choice(["hp", "attack", "defense", "speed"])
+                stat2 = random.choice(["hp", "attack", "defense", "speed"])
+                while stat1 == stat2:
+                    stat2 = random.choice(["hp", "attack", "defense", "speed"])
+                await self.lvlup(ctx, pipo["name"], stat1, stat2)
+        else:
+            lvl = random.randint(6, 9)
+            for i in range(lvl):
+                stat1 = random.choice(["hp", "attack", "defense", "speed"])
+                stat2 = random.choice(["hp", "attack", "defense", "speed"])
+                while stat1 == stat2:
+                    stat2 = random.choice(["hp", "attack", "defense", "speed"])
+                await self.lvlup(ctx, pipo["name"], stat1, stat2)
+
+        
+        await ctx.send(f"Wild pipo found! \n{pipo['name']} \n{pipo['rarity']} \nLvl:{lvl}")
+
+    # Command to show wild pipos
+    @commands.command()
+    async def show_wild(self, ctx):
+        pipos = self.collection.find({})
+        for pipo in pipos:
+            await ctx.send(f"{pipo['name']} \n{pipo['rarity']} \nLvl: {pipo['lvl']}")
+    
 async def setup(client):
     await client.add_cog(Pipos(client))

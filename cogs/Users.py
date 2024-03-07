@@ -71,7 +71,7 @@ class Users(commands.Cog):
             await ctx.send('No tiene pipos!')
             return
         for pipo in user['pipos']:
-            await ctx.send(f"{pipo['name']} {pipo['rarity']} \n{pipo['hp']} HP \n{pipo['attack']} ATK \n{pipo['defense']} DEF \n{pipo['speed']} SPD \n Passive: {pipo['passive']}")
+            await ctx.send(f"Lvl:1 / {pipo['name']} / {pipo['rarity']} \n{pipo['hp']} HP \n{pipo['attack']} ATK \n{pipo['defense']} DEF \n{pipo['speed']} SPD \n Passive: {pipo['passive']}")
 
     # Command to set a pipo as the user's defender
     @commands.command()

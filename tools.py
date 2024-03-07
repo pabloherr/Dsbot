@@ -2,7 +2,7 @@ import random
 from math import ceil as cl
 from models.pipo import Pipo
 
-async def random_pipo() -> Pipo:
+async def random_pipo( wild = False) -> Pipo:
     rarity = random.choices(["common", "uncommon", "rare", "legendary"], weights=[60, 30, 10, 3], k=1)[0]
     passive = random.choice(["None", "Invulnerable","Feel No Pain", "Lethal Hits", "Fight First"])
     if rarity == "common":
@@ -20,10 +20,11 @@ async def random_pipo() -> Pipo:
     random.shuffle(stats)
     pipo_name = "Pipo_" + str(random.randint(1, 100))
     
-    pipo = Pipo(rarity=rarity,price=price, name=pipo_name,
-                hp=5+stats[0], attack=stats[1], 
+    pipo = Pipo(wild = wild, rarity=rarity,price=price, name=pipo_name,
+                hp=5+stats[0],max_hp=5+stats[0], attack=stats[1], 
                 defense=stats[2], speed=stats[3], passive=passive)
     return pipo.dict()
+
 
 async def fight(pipoatk: dict, pipodef: dict) -> int:
     lethal = 0
@@ -64,3 +65,4 @@ async def fight(pipoatk: dict, pipodef: dict) -> int:
                 if r == 0:
                     dmg -= 1
         return dmg
+    
