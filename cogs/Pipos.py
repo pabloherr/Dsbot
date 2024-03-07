@@ -26,11 +26,11 @@ class Pipos(commands.Cog):
         
     #combat pipos
     @commands.command()
-    async def combat(self, ctx, pipo_name: str, pipo_name2: str):
+    async def combat(self, ctx, pipo_name: str):
         user1 = self.db["users"].find_one({"id": ctx.author.id})
         user2 = self.db["users"].find_one({"id": ctx.message.mentions[0].id})
         pipo1 = next((pipo for pipo in user1["pipos"] if pipo["name"] == pipo_name), None)
-        pipo2 = next((pipo for pipo in user2["pipos"] if pipo["name"] == pipo_name2), None)
+        pipo2 = user2["defender"]
         
         if pipo1 is None:
             await ctx.send("Pipo1 not found")
