@@ -18,15 +18,8 @@ class Combat(commands.Cog):
         pipo1 = next((pipo for pipo in user1["pipos"] if pipo["name"] == pipo_name), None)
         pipo2 = user2["defender"]
         
-        if pipo1 is None:
-            await ctx.send("Pipo1 not found")
-            return
-        if pipo2 is None:
-            await ctx.send("Pipo2 not found")
-            return
+        await self.precombat(ctx, pipo1, pipo2)
         
-        await ctx.send(f"{pipo1['name']} is ready to fight!")
-        await ctx.send(f"{pipo2['name']} is ready to fight!")
         await self.fight(ctx, pipo1, pipo2)
     
     #combat wild pipo
@@ -35,16 +28,10 @@ class Combat(commands.Cog):
         user = self.db["users"].find_one({"id": ctx.author.id})
         pipo1 = next((pipo for pipo in user["pipos"] if pipo["name"] == pipo_name), None)
         pipo2 = await wild(zone)
-        await ctx.send(pipo2)
-        if pipo2 == "Invalid zone":
-            await ctx.send("Invalid zone")
-            return
-        if pipo1 is None:
-            await ctx.send("Pipo1 not found")
-            return
         
-        await ctx.send(f"{pipo1['name']} is ready to fight!")
-        await ctx.send(f"{pipo2['name']} is ready to fight!")
+        await ctx.send(pipo2)
+        await self.precombat(ctx, pipo1, pipo2)
+        
         winner = await self.fight(ctx, pipo1, pipo2)
         if winner == 'pipo2':
             self.db["wild_pipos"].insert_one(pipo2)
@@ -82,8 +69,32 @@ class Combat(commands.Cog):
         await ctx.send(f"{pipo2['name']} is ready to fight!")
         await self.fight(ctx, pipo1, pipo2)
     
+    #combat pipo vs wild pipo
+    @commands.command()
+    async def wild_combat_def(self, ctx, pipo_name: str, wild_pipo: str):
+        user = self.db["users"].find_one({"id": ctx.author.id})
+        pipo1 = next((pipo for pipo in user["pipos"] if pipo["name"] == pipo_name), None)
+        pipo2 = self.db["wild_pipos"].find_one({"name": wild_pipo})
+        
+        await self.precombat(ctx, pipo1, pipo2)
+        
+        winner = await self.fight(ctx, pipo1, pipo2)
+        if winner == 'pipo1':
+            self.db["wild_pipos"].delete_one({"name": wild_pipo})
     
     
+    
+    #precombat
+    async def precombat(self, ctx, pipo1, pipo2):
+        if pipo1 is None:
+            await ctx.send("Pipo1 not found")
+            return
+        if pipo2 is None:
+            await ctx.send("Pipo2 not found")
+            return
+        
+        await ctx.send(f"{pipo1['name']} is ready to fight!")
+        await ctx.send(f"{pipo2['name']} is ready to fight!")
     #combat pipo vs pipo
     async def fight(self, ctx, pipo1, pipo2):
         turn1 = 0

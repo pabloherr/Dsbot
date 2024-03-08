@@ -35,42 +35,24 @@ async def wild(zone: str = "forest") -> dict:
     if zone not in ["forest", "desert", "mountain", "megaforest", "megadesert", "megamountain"]:
         return "Invalid zone"
     pipo = await random_pipo(wild=True)
+    
     if zone == "forest":
-        lvl = random.randint(1, 3)
-        for i in range(lvl-1):
-            stat1 = random.choice(["hp", "attack", "defense", "speed"])
-            stat2 = random.choice(["hp", "attack", "defense", "speed"])
-            pipo = await lvlup(pipo, stat1, stat2)
-    elif zone == "desert":
+        lvl = random.randint(0, 2)
+    if zone == "desert":
         lvl = random.randint(3, 5)
-        for i in range(lvl):
-            stat1 = random.choice(["hp", "attack", "defense", "speed"])
-            stat2 = random.choice(["hp", "attack", "defense", "speed"])
-            pipo = await lvlup(pipo, stat1, stat2)
-    elif zone == "mountain":
+    if zone == "mountain":
         lvl = random.randint(6, 9)
-        for i in range(lvl):
-            stat1 = random.choice(["hp", "attack", "defense", "speed"])
-            stat2 = random.choice(["hp", "attack", "defense", "speed"])
-            pipo = await lvlup(pipo, stat1, stat2)
-    elif zone == "megaforest":
-        lvl = 10
-        for i in range(lvl):
-            stat1 = random.choice(["hp", "attack", "defense", "speed"])
-            stat2 = random.choice(["hp", "attack", "defense", "speed"])
-            pipo = await lvlup(pipo, stat1, stat2)
-    elif zone == "megadesert":
-        lvl = 20
-        for i in range(lvl):
-            stat1 = random.choice(["hp", "attack", "defense", "speed"])
-            stat2 = random.choice(["hp", "attack", "defense", "speed"])
-            pipo = await lvlup(pipo, stat1, stat2)
-    elif zone == "megamountain":
-        lvl = 30
-        for i in range(lvl):
-            stat1 = random.choice(["hp", "attack", "defense", "speed"])
-            stat2 = random.choice(["hp", "attack", "defense", "speed"])
-            pipo = await lvlup(pipo, stat1, stat2)
+    if zone == "megaforest":
+        lvl = 9
+    if zone == "megadesert":
+        lvl = 19
+    if zone == "megamountain":
+        lvl = 29
+    
+    for i in range(lvl):
+        stat1 = random.choice(["hp", "attack", "defense", "speed"])
+        stat2 = random.choice(["hp", "attack", "defense", "speed"])
+        pipo = await lvlup(pipo, stat1, stat2)
     return pipo
 
 

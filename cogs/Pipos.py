@@ -13,7 +13,7 @@ class Pipos(commands.Cog):
         self.collection = self.db["wild_pipos"]
         self.collection2 = self.db["mega_pipos"]
         self.mega_pipo.start()
-        
+    
     def cog_unload(self):
         self.mega_pipo.cancel()
     
@@ -71,8 +71,12 @@ class Pipos(commands.Cog):
             await ctx.send(f"{pipo['name']} \n{pipo['rarity']} \nLvl: {pipo['lvl']}")
     
     # Weekly wild mega pipo
-    @tasks.loop(minutes=1)
+    @tasks.loop(hours=1)
     async def mega_pipo(self):
+        if not self.db["time"].find_one({"id": "mega_pipo"}):
+            self.db["time"].insert_one({"id": "mega_pipo", "time": datetime.datetime.now()})
+        if self.db["time"].find_one({"id": "mega_pipo"})["time"] < datetime.datetime.now():
+            self.db["time"].update_one({"id": "mega_pipo"}, {"$set": {"time": datetime.datetime.now() + datetime.timedelta(hours=168)}})
         if  self.collection2.count_documents({}) > 0:
             self.collection2.delete_many({})
         mega_zone = ["megaforest", "megadesert", "megamountain"] 
@@ -80,11 +84,7 @@ class Pipos(commands.Cog):
             pipo = await wild(zone)
             self.collection2.insert_one(pipo)
             self.collection2.update_one({"name": pipo["name"]}, {"$set": {"name": f"Mega {pipo['name']}"}})
-
-    @commands.command()
-    async def mega(self, ctx):
-        pipos = await wild("megaforest")
-        await ctx.send(f"{pipos}")
+    
     
 async def setup(client):
     await client.add_cog(Pipos(client))

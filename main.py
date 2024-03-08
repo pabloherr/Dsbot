@@ -4,6 +4,10 @@ from discord.ext import commands
 from database import db_client
 import os
 
+mongo_client = db_client
+db = mongo_client["discord"]
+time = db["time"]
+
 
 intents = discord.Intents.default()
 intents.message_content = True
