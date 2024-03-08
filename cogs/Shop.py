@@ -32,7 +32,7 @@ class Shop(commands.Cog):
     # Show the shop
     @commands.command()
     async def shop(self, ctx):
-        await ctx.send("Welcome to the shop! Here you can buy Pipos with your cash.")
+        await ctx.send("Welcome to the shop! Here you can buy Pipos with your gold.")
         await ctx.send("Type !buy and de number of the pipo to buy it.")
         await ctx.send("Here are the Pipos available: \n\n")
         
@@ -43,7 +43,7 @@ class Shop(commands.Cog):
             await ctx.send("OUT OF STOCK!")
             await ctx.send("Please wait fot towmorrow to restock the shop.\n\n")
             
-        await ctx.send("Type !restock to restock the shop for 10 cash.")
+        await ctx.send("Type !restock to restock the shop for 50 gold.")
     
     # Buy a pipo
     @commands.command()
@@ -56,11 +56,11 @@ class Shop(commands.Cog):
         
         user = self.db["users"].find_one({"id": ctx.author.id})
         
-        if user["cash"] < pipo["price"]:
-            await ctx.send("Not enough cash")
+        if user["gold"] < pipo["price"]:
+            await ctx.send("Not enough gold")
             return
         
-        user["cash"] -= pipo["price"]
+        user["gold"] -= pipo["price"]
         user["pipos"].append(pipo)
         self.db["users"].update_one({"id": ctx.author.id}, {"$set": user})
         self.collection.delete_one({"name": pipo_number})
@@ -71,8 +71,8 @@ class Shop(commands.Cog):
     @commands.command()
     async def restock(self, ctx):
         
-        if self.db["users"].find_one({"id": ctx.author.id})["cash"] < 10:
-            await ctx.send("Not enough cash")
+        if self.db["users"].find_one({"id": ctx.author.id})["gold"] < 50:
+            await ctx.send("Not enough gold")
             return
         
         self.collection.delete_many({})
@@ -82,7 +82,7 @@ class Shop(commands.Cog):
             self.collection.insert_one(pipo)
             
         user = self.db["users"].find_one({"id": ctx.author.id})
-        user["cash"] -= 10
+        user["gold"] -= 50
         await ctx.send("Shop restocked!")
         await self.shop(ctx)
 

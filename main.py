@@ -7,6 +7,7 @@ import os
 mongo_client = db_client
 db = mongo_client["discord"]
 time = db["time"]
+leaderboard = db["leaderboard"]
 
 
 intents = discord.Intents.default()

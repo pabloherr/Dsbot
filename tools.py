@@ -12,16 +12,16 @@ async def random_pipo( wild = False) -> Pipo:
     passive = random.choice(["None", "Invulnerable","Feel No Pain", "Lethal Hits", "Fight First"])
     if rarity == "common":
         stats = [1, 1, 2, 3]
-        price = 2
+        price = 10
     elif rarity == "uncommon":
-        stats = [1, 1, 2, 4]
-        price = 4
+        stats = [1, 2, 3, 3]
+        price = 40
     elif rarity == "rare":
         stats = [2, 2, 3, 4]
-        price = 8
+        price = 80
     else:
         stats = [2, 3, 4, 4]
-        price = 16
+        price = 160
     random.shuffle(stats)
     pipo_name = "Pipo_" + str(random.randint(1, 100))
     

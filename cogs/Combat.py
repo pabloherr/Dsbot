@@ -23,10 +23,9 @@ class Combat(commands.Cog):
         
         winner = await self.fight(ctx, pipo1, pipo2)
         if winner == 'pipo1':
-            await self.exp_gain(pipo1, pipo2, True)
+            await self.exp_gain(ctx, winner= pipo1, loser = pipo2, loser_to=True, user_win = user1, user_lose= user2)
         else:
-            await self.exp_gain(pipo2, pipo1, True)
-        
+            await self.exp_gain(ctx, pipo2, pipo1, loser_to=True, user_win= user2, user_lose= user1)
     
     #combat wild pipo
     @commands.command()
@@ -41,14 +40,14 @@ class Combat(commands.Cog):
         winner = await self.fight(ctx, pipo1, pipo2)
         
         if winner == 'pipo1':
-            await self.exp_gain(pipo1, pipo2)
+            await self.exp_gain(ctx, winner= pipo1, loser = pipo2, user_win = user)
         if winner == 'pipo2':
             self.db["wild_pipos"].insert_one(pipo2)
-            await self.exp_gain(pipo2, pipo1, True)
+            await self.exp_gain(ctx, winner= pipo2, loser = pipo1, loser_to=True)
     
     #combat other user
     @commands.command()
-    async def combat(self, ctx, pipo1: str, pipo2:str):
+    async def combat(self, ctx, pipo1: str, pipo2:str, bet = 0):
         await ctx.send(f'{ctx.message.mentions[0].name} confirm the fight with yes or no')
         def check(m):
             return m.author == ctx.message.mentions[0] and m.content.lower() in ['yes', 'no']
@@ -68,6 +67,10 @@ class Combat(commands.Cog):
         pipo1 = next((pipo for pipo in user1["pipos"] if pipo["name"] == pipo1), None)
         pipo2 = next((pipo for pipo in user2["pipos"] if pipo["name"] == pipo2), None)
         
+        if user1["gold"] < bet or user2["gold"] < bet:
+            await ctx.send("Not enough gold")
+            return
+        
         if pipo1 is None:
             await ctx.send("Pipo1 not found")
             return
@@ -80,9 +83,9 @@ class Combat(commands.Cog):
         winner = await self.fight(ctx, pipo1, pipo2)
         
         if winner == 'pipo1':
-            await self.exp_gain(pipo1, pipo2, True)
+            await self.exp_gain(winner=pipo1, loser=pipo2, loser_to=True, bet= bet, user_win= user1, user_lose= user2)
         else:
-            await self.exp_gain(pipo2, pipo1, True)
+            await self.exp_gain(winner=pipo2, loser=pipo1, loser_to=True,bet= bet, user_win= user2,user_lose= user1)
 
     #combat pipo vs wild pipo
     @commands.command()
@@ -95,22 +98,14 @@ class Combat(commands.Cog):
         
         winner = await self.fight(ctx, pipo1, pipo2)
         if winner == 'pipo1':
+            await self.exp_gain(ctx,ctx,winner= pipo1, loser = pipo2, user_win = user)
             self.db["wild_pipos"].delete_one({"name": wild_pipo})
-            await self.exp_gain(pipo1, pipo2)
         else:
-            await self.exp_gain(pipo2, pipo1, True)
+            await self.exp_gain(ctx, winner= pipo2, loser = pipo1, loser_to=True)
     
     
     
-    #exp gain after combat
-    async def exp_gain(self,ctx, winner, loser, loser_to = False):
-        exp = {1:2, 2:5, 3:8, 4:10, 5:15, 6:20, 7:32, 8:50, 9:80, 10:100}
-        winner["exp"] += exp[loser["lvl"]]
-        await ctx.send(f"{winner['name']} gained {exp[loser['lvl']]} exp!")
-        if loser_to:
-            loser["exp"] += cl(exp[winner["lvl"]]/2)
-            await ctx.send(f"{loser['name']} gained {cl(exp[winner['lvl']]/2)} exp!")
-            
+    
     #precombat
     async def precombat(self, ctx, pipo1, pipo2):
         if pipo1 is None:
@@ -122,7 +117,7 @@ class Combat(commands.Cog):
         
         await ctx.send(f"{pipo1['name']} is ready to fight!")
         await ctx.send(f"{pipo2['name']} is ready to fight!")
-        
+    
     #combat pipo vs pipo
     async def fight(self, ctx, pipo1, pipo2):
         turn1 = 0
@@ -156,21 +151,27 @@ class Combat(commands.Cog):
                     await ctx.send(f"   {pipo2['name']} attacks!")
                     
                 #both attack
+                ff_damage = cl(pipo1["attack"]/2)
+                ff_damage = cl(pipo2["attack"]/2)
                 if turn1 >= 12 and turn2 >= 12:
                     p1_vel = pipo1["speed"]
                     p2_vel = pipo2["speed"]
                     if pipo1["passive"] == "Fight Fist":
-                        p1_vel += 20
+                        pipo1["attack"] += ff_damage
+                        p1_vel += 200
                     if pipo2["passive"] == "Fight Fist":
-                        p2_vel += 20
+                        pipo1["attack"] += ff_damage
+                        p2_vel += 200
                     #pipo1 faster
                     if p1_vel > p2_vel:
                         turn1 = 0
                         turn2 = 0
                         dmg = await damage(pipo1, pipo2)
                         pipo2["hp"] -= dmg
-                        dmg = await damage(pipo2, pipo1)
-                        pipo1["hp"] -= dmg
+                        
+                        if pipo2["hp"] > 0:
+                            dmg = await damage(pipo2, pipo1)
+                            pipo1["hp"] -= dmg
                         await ctx.send(f"   {pipo1['name']} it's faster!")
                         
                     #pipo2 faster
@@ -179,8 +180,10 @@ class Combat(commands.Cog):
                         turn2 = 0
                         dmg = await damage(pipo2, pipo1)
                         pipo1["hp"] -= dmg
-                        dmg = await damage(pipo1, pipo2)
-                        pipo2["hp"] -= dmg
+                        
+                        if pipo1["hp"] > 0:
+                            dmg = await damage(pipo1, pipo2)
+                            pipo2["hp"] -= dmg
                         await ctx.send(f"   {pipo2['name']} it's faster!")
                     
                     #speed tie
@@ -214,7 +217,9 @@ class Combat(commands.Cog):
                                 
                             await ctx.send(f"   {pipo2['name']} attacks fist!")
                             
-                            
+                pipo1["attack"] = pipo1["attack"] - ff_damage
+                pipo2["attack"] = pipo2["attack"] - ff_damage        
+                
                 await ctx.send(f"   {pipo1['name']} HP: {pipo1['hp']} {pipo2['name']} HP: {pipo2['hp']}")
         
         
@@ -231,6 +236,41 @@ class Combat(commands.Cog):
             pipo1["hp"] = pipo1_hp
             pipo2["hp"] = pipo2_hp
             return 'pipo1'
+    
+    #exp gain and gold after combat and leaderboards
+    async def exp_gain(self, ctx, winner, loser, loser_to = False, leaderboard=False, bet = -1, user_win = None, user_lose = None):
+        exp = {1:2, 2:5, 3:8, 4:10, 5:15, 6:20, 7:32, 8:50, 9:80, 10:100}
+        
+        #gold
+        if bet != -1:
+            
+            user_win["gold"] += bet
+            user_lose["gold"] -= bet
+            await ctx.send(f"{winner['name']} gained {bet} gold!")
+            await ctx.send(f"{loser['name']} lost {bet} gold!")
 
+        else:
+            user_win["gold"] += exp[loser["lvl"]]
+        
+        #exp
+        winner["exp"] += exp[loser["lvl"]]
+        await ctx.send(f"{winner['name']} gained {exp[loser['lvl']]} exp!")
+        
+        if loser_to:
+            
+            loser["exp"] += cl(exp[winner["lvl"]]/2)
+            await ctx.send(f"{loser['name']} gained {cl(exp[winner['lvl']]/2)} exp!")
+        
+        #leaderboards
+        if leaderboard:
+            
+            if not user_win["name"] in self.db["leaderboard"].find_one({"name": user_win["name"]}):
+                self.db["leaderboard"].insert_one({"name": user_win["name"], "points": 0})
+            
+            pts = exp[loser["lvl"]]
+            self.db["leaderboard"].update_one({"name": user_win["name"]}, {"$inc": {"points": pts}})
+            
+            await ctx.send(f"{user_win['name']} gained {pts} points!")
+    
 async def setup(client):
     await client.add_cog(Combat(client))

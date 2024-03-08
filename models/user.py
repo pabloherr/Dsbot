@@ -3,6 +3,7 @@ from models.pipo import Pipo
 
 class User(BaseModel):
     id: int
-    cash: int = 100000000000000000
+    name: str
+    gold: int = 10000
     defender: Pipo = None
     pipos: list = []
