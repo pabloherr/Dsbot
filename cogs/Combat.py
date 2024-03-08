@@ -2,6 +2,7 @@ import random
 from discord.ext import commands
 from database import db_client
 from tools import damage, wild
+from math import ceil as cl
 
 class Combat(commands.Cog):
     def __init__(self, client):
@@ -20,7 +21,12 @@ class Combat(commands.Cog):
         
         await self.precombat(ctx, pipo1, pipo2)
         
-        await self.fight(ctx, pipo1, pipo2)
+        winner = await self.fight(ctx, pipo1, pipo2)
+        if winner == 'pipo1':
+            await self.exp_gain(pipo1, pipo2, True)
+        else:
+            await self.exp_gain(pipo2, pipo1, True)
+        
     
     #combat wild pipo
     @commands.command()
@@ -33,8 +39,12 @@ class Combat(commands.Cog):
         await self.precombat(ctx, pipo1, pipo2)
         
         winner = await self.fight(ctx, pipo1, pipo2)
+        
+        if winner == 'pipo1':
+            await self.exp_gain(pipo1, pipo2)
         if winner == 'pipo2':
             self.db["wild_pipos"].insert_one(pipo2)
+            await self.exp_gain(pipo2, pipo1, True)
     
     #combat other user
     @commands.command()
@@ -67,8 +77,13 @@ class Combat(commands.Cog):
         
         await ctx.send(f"{pipo1['name']} is ready to fight!")
         await ctx.send(f"{pipo2['name']} is ready to fight!")
-        await self.fight(ctx, pipo1, pipo2)
-    
+        winner = await self.fight(ctx, pipo1, pipo2)
+        
+        if winner == 'pipo1':
+            await self.exp_gain(pipo1, pipo2, True)
+        else:
+            await self.exp_gain(pipo2, pipo1, True)
+
     #combat pipo vs wild pipo
     @commands.command()
     async def wild_combat_def(self, ctx, pipo_name: str, wild_pipo: str):
@@ -81,9 +96,21 @@ class Combat(commands.Cog):
         winner = await self.fight(ctx, pipo1, pipo2)
         if winner == 'pipo1':
             self.db["wild_pipos"].delete_one({"name": wild_pipo})
+            await self.exp_gain(pipo1, pipo2)
+        else:
+            await self.exp_gain(pipo2, pipo1, True)
     
     
     
+    #exp gain after combat
+    async def exp_gain(self,ctx, winner, loser, loser_to = False):
+        exp = {1:2, 2:5, 3:8, 4:10, 5:15, 6:20, 7:32, 8:50, 9:80, 10:100}
+        winner["exp"] += exp[loser["lvl"]]
+        await ctx.send(f"{winner['name']} gained {exp[loser['lvl']]} exp!")
+        if loser_to:
+            loser["exp"] += cl(exp[winner["lvl"]]/2)
+            await ctx.send(f"{loser['name']} gained {cl(exp[winner['lvl']]/2)} exp!")
+            
     #precombat
     async def precombat(self, ctx, pipo1, pipo2):
         if pipo1 is None:
@@ -95,6 +122,7 @@ class Combat(commands.Cog):
         
         await ctx.send(f"{pipo1['name']} is ready to fight!")
         await ctx.send(f"{pipo2['name']} is ready to fight!")
+        
     #combat pipo vs pipo
     async def fight(self, ctx, pipo1, pipo2):
         turn1 = 0

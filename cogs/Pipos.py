@@ -34,7 +34,8 @@ class Pipos(commands.Cog):
     @commands.command()
     async def levelup(self, ctx, pipo_name: str, stat1, stat2):
         
-        lvl = {1:0, 2:10, 3:30, 4:60, 5:120, 6:240, 7:480, 8:960, 9:1920, 10:3840}
+        lvl = {1:0, 2:10, 3:40, 4:80, 5:160, 6:320, 7:640, 8:1280, 9:2560, 10:5120}
+            #  2:5  5:8   8:10  10:16  15:22 20:32   32:40 50:52    80:64   100
         
         
         user = self.db["users"].find_one({"id": ctx.author.id})
