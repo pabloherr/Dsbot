@@ -258,26 +258,24 @@ class Combat(commands.Cog):
         if bet > 0:
             gold = bet
             
-            
+        
         #gold
         self.db["users"].update_one({"id": user_win["id"]}, {"$inc": {"gold": gold}})
         await ctx.send(f"{user_win['name']} gained {gold} gold")
         
         #exp
-        pipos = self.db["users"].find_one({"id": user_win["id"]})["pipos"]
-        for pipo in pipos:
-            if pipo["name"] == winner["name"]:
-                pipo["exp"] += exp
-        self.db["users"].update_one({"id": user_win["id"]}, {"$set": {"pipos": pipos}})
+        user = self.db["users"].find_one({"id": user_win["id"]})
+        pipo = next((pipo for pipo in user["pipos"] if pipo["name"] == winner["name"]), None)
+        pipo["exp"] += exp
+        self.db["users"].update_one({"id": user_win["id"]}, {"$set": {"pipos": user["pipos"]}})
         await ctx.send(f"{winner['name']} gained {exp} exp")
         
         #loser exp
         if loser_to:
-            pipos = self.db["users"].find_one({"id": user_lose["id"]})["pipos"]
-            for pipo in pipos:
-                if pipo["name"] == loser["name"]:
-                    pipo["exp"] += exp
-            self.db["users"].update_one({"id": user_lose["id"]}, {"$set": {"pipos": pipos}})
+            user = self.db["users"].find_one({"id": user_lose["id"]})
+            pipo = next((pipo for pipo in user["pipos"] if pipo["name"] == loser["name"]), None)
+            pipo["exp"] += exp
+            self.db["users"].update_one({"id": user_lose["id"]}, {"$set": {"pipos": user["pipos"]}})
             await ctx.send(f"{loser['name']} gained {exp} exp")
         
         #leaderboards
