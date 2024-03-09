@@ -64,6 +64,8 @@ class Pipos(commands.Cog):
                     return
                 
                 pipo = await lvlup(pipo, stat1, stat2)
+                if pipo["name"] == user["defender"]["name"]:
+                    user["defender"] = pipo
         self.db["users"].update_one({"id": ctx.author.id}, {"$set": {"pipos": pipos}})
         await ctx.send(f"{pipo_name} lvl up! \n{stat1} +1 \n{stat2} +1")
 

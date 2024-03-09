@@ -23,9 +23,9 @@ class Combat(commands.Cog):
         
         winner = await self.fight(ctx, pipo1, pipo2)
         if winner == 'pipo1':
-            await self.exp_gain(ctx, winner= pipo1, loser = pipo2, loser_to=True, user_win = user1, user_lose= user2)
+            await self.postgame(ctx, winner= pipo1, loser = pipo2, loser_to=True, user_win = user1, user_lose= user2, leaderboards=True)
         else:
-            await self.exp_gain(ctx, pipo2, pipo1, loser_to=True, user_win= user2, user_lose= user1)
+            await self.postgame(ctx, pipo2, pipo1, loser_to=True, user_win= user2, user_lose= user1, leaderboards=True)
     
     #combat wild pipo
     @commands.command()
@@ -83,9 +83,9 @@ class Combat(commands.Cog):
         winner = await self.fight(ctx, pipo1, pipo2)
         
         if winner == 'pipo1':
-            await self.exp_gain(winner=pipo1, loser=pipo2, loser_to=True, bet= bet, user_win= user1, user_lose= user2)
+            await self.postgame(winner=pipo1, loser=pipo2, loser_to=True, bet= bet, user_win= user1, user_lose= user2, leaderboards=True)
         else:
-            await self.exp_gain(winner=pipo2, loser=pipo1, loser_to=True,bet= bet, user_win= user2,user_lose= user1)
+            await self.postgame(winner=pipo2, loser=pipo1, loser_to=True,bet= bet, user_win= user2,user_lose= user1, leaderboards=True)
 
     #combat pipo vs wild pipo
     @commands.command()
@@ -98,14 +98,73 @@ class Combat(commands.Cog):
         
         winner = await self.fight(ctx, pipo1, pipo2)
         if winner == 'pipo1':
-            await self.exp_gain(ctx,ctx,winner= pipo1, loser = pipo2, user_win = user)
+            await self.postgame(ctx,ctx,winner= pipo1, loser = pipo2, user_win = user)
             self.db["wild_pipos"].delete_one({"name": wild_pipo})
         else:
-            await self.exp_gain(ctx, winner= pipo2, loser = pipo1, loser_to=True)
+            await self.postgame(ctx, winner= pipo2, loser = pipo1, loser_to=True)
     
-    
-    
-    
+    #raid combat pipos vs mega pipo
+    @commands.command()
+    async def mega_raid(self, ctx,mega_pipo: str = None):
+        user1 = None
+        user2 = None
+        user3 = None
+        
+        pipo1 = None
+        pipo2 = None
+        pipo3 = None
+        
+        users_to_confirm = []
+        users_to_confirm.append(ctx.author.id)
+        if ctx.message.mentions:
+            for i in range(ctx.message.mentions):
+                users_to_confirm.append(ctx.message.mentions[i])
+        
+        if len(users_to_confirm) > 3:
+            await ctx.send("Too many users")
+            return
+        
+        user1 = self.db["users"].find_one({"id": users_to_confirm[0]})
+        pipo1 = user1["defender"]
+        if len(users_to_confirm) > 1:
+            user2 = self.db["users"].find_one({"id": users_to_confirm[1]})
+            pipo2 = user2["defender"]
+        if len(users_to_confirm) > 2:
+            user3 = self.db["users"].find_one({"id": users_to_confirm[2]})
+            pipo3 = user3["defender"]
+        await ctx.send(f'The team going to the raid is:')
+        
+        
+        if user1 is not None:
+            if user1["defender"] is not None:
+                if user1["tank"]:
+                    await ctx.send(f'{user1["name"]} - Tank')
+            await ctx.send(f"{pipo1['name']} ({pipo1['rarity']}) | Lvl:{pipo1['lvl']} \n{pipo1['hp']} HP \n{pipo1['attack']} ATK \n{pipo1['defense']} DEF \n{pipo1['speed']} SPD \nPassive: {pipo1['passive']}")
+        if user2 is not None:
+            if user2["defender"] is not None:
+                if user2["tank"]:
+                    await ctx.send(f'{user2["name"]} - Tank')
+            await ctx.send(f"{pipo2['name']} ({pipo2['rarity']}) | Lvl:{pipo2['lvl']} \n{pipo2['hp']} HP \n{pipo2['attack']} ATK \n{pipo2['defense']} DEF \n{pipo2['speed']} SPD \nPassive: {pipo2['passive']}")
+        if user3 is not None:
+            if user3["defender"] is not None:
+                if user3["tank"]:
+                    await ctx.send(f'{user3["name"]} - Tank')
+            await ctx.send(f"{pipo3['name']} ({pipo3['rarity']}) | Lvl:{pipo3['lvl']} \n{pipo3['hp']} HP \n{pipo3['attack']} ATK \n{pipo3['defense']} DEF \n{pipo3['speed']} SPD \nPassive: {pipo3['passive']}")
+        
+        
+        for user_id in users_to_confirm:
+            await ctx.send(f'<@{user_id}> confirm the fight with yes')
+            
+            def check(message):
+                return message.author.id == user_id and message.content.lower() == 'yes'
+
+            try:
+                await self.client.wait_for('message', check=check, timeout=60.0)
+            except TimeoutError:
+                await ctx.send(f'<@{user_id}> do not confirm the fight.')
+            else:
+                await ctx.send(f'<@{user_id}> confirmed the fight.')
+        await ctx.send('go')
     #precombat
     async def precombat(self, ctx, pipo1, pipo2):
         if pipo1 is None:

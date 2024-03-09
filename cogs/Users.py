@@ -96,5 +96,18 @@ class Users(commands.Cog):
         self.collection.update_one({"id": ctx.author.id}, {"$set": user})
         await ctx.send(f"{pipo_name} set as defender")
 
+    # Command to activate and deactivate the tank mode
+    @commands.command()
+    async def tank(self, ctx):
+        user = self.collection.find_one({"id": ctx.author.id})
+        if user["tank"] == False:
+            user["tank"] = True
+            self.collection.update_one({"id": ctx.author.id}, {"$set": user})
+            await ctx.send("Tank mode activated")
+        else:
+            user["tank"] = False
+            self.collection.update_one({"id": ctx.author.id}, {"$set": user})
+            await ctx.send("Tank mode deactivated")
+            
 async def setup(client):
     await client.add_cog(Users(client))
