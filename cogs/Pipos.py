@@ -39,29 +39,32 @@ class Pipos(commands.Cog):
         
         
         user = self.db["users"].find_one({"id": ctx.author.id})
-        pipo = next((pipo for pipo in user["pipos"] if pipo["name"] == pipo_name), None)
-        if pipo is None:
-            await ctx.send("Pipo not found")
-            return
-        
-        if pipo["lvl"] == 10:
-            await ctx.send("Pipo is max lvl")
-            return
-        
-        if pipo["exp"] < lvl[pipo["lvl"]]:
-            await ctx.send("Not enough exp")
-            return
-        
-        if stat1 not in ["hp", "attack", "defense", "speed"] or stat2 not in ["hp", "attack", "defense", "speed"]:
-            await ctx.send("Invalid stats")
-            return
-        
-        if stat1 == stat2:
-            await ctx.send("Stats must be different")
-            return
-        
-        pipo = await lvlup(user, pipo, stat1, stat2)
-        self.db["users"].update_one({"id": ctx.author.id}, {"$set": user})
+        pipos = self.db["users"].find_one({"id": ctx.author.id})["pipos"]
+        for pipo in pipos:
+            if pipo["name"] == pipo_name:
+                
+                if pipo is None:
+                    await ctx.send("Pipo not found")
+                    return
+                
+                if pipo["lvl"] == 10:
+                    await ctx.send("Pipo is max lvl")
+                    return
+                
+                if pipo["exp"] < lvl[pipo["lvl"]]:
+                    await ctx.send("Not enough exp")
+                    return
+                
+                if stat1 not in ["hp", "attack", "defense", "speed"] or stat2 not in ["hp", "attack", "defense", "speed"]:
+                    await ctx.send("Invalid stats")
+                    return
+                
+                if stat1 == stat2:
+                    await ctx.send("Stats must be different")
+                    return
+                
+                pipo = await lvlup(pipo, stat1, stat2)
+        self.db["users"].update_one({"id": ctx.author.id}, {"$set": {"pipos": pipos}})
         await ctx.send(f"{pipo_name} lvl up! \n{stat1} +1 \n{stat2} +1")
 
     # Command to show wild pipos
