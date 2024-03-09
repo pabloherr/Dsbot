@@ -72,6 +72,20 @@ async def lvlup(pipo: dict, stat1: str, stat2: str) -> dict:
     pipo["exp"] = 0
     return pipo
 
+async def velocity(pipo1: dict, pipo2: dict):
+    #pipo1 faster
+    if pipo1['speed'] > pipo2['speed']:
+        return pipo1
+    #pipo2 faster
+    elif pipo1['speed'] < pipo2['speed']:
+        return pipo2
+    #speed tie
+    else:
+        r = random.randint(0, 1)
+        if r == 0:
+            return pipo1
+        else:
+            return pipo2
 
 # Command to calculate the damage
 async def damage(pipoatk: dict, pipodef: dict) -> int:

@@ -30,7 +30,7 @@ class Pipos(commands.Cog):
         self.db["users"].update_one({"id": ctx.author.id}, {"$set": user})
         await ctx.send(f"{pipo_name} renamed to {new_name}")
 
-    #Lvl up the pipos
+    # Lvl up the pipos
     @commands.command()
     async def levelup(self, ctx, pipo_name: str, stat1, stat2):
         
@@ -68,7 +68,27 @@ class Pipos(commands.Cog):
                     user["defender"] = pipo
         self.db["users"].update_one({"id": ctx.author.id}, {"$set": {"pipos": pipos}})
         await ctx.send(f"{pipo_name} lvl up! \n{stat1} +1 \n{stat2} +1")
-
+    
+    # Command to activate and deactivate the pipo as tank
+    @commands.command()
+    async def tank(self, ctx, pipo_name: str):
+        user = self.db["users"].find_one({"id": ctx.author.id})
+        pipos = self.db["users"].find_one({"id": ctx.author.id})["pipos"]
+        for pipo in pipos:
+            if pipo["name"] == pipo_name:
+                if pipo is None:
+                    await ctx.send("Pipo not found")
+                    return
+                if pipo["tank"]:
+                    pipo["tank"] = False
+                    await ctx.send(f"{pipo_name} deactivated as tank")
+                else:
+                    pipo["tank"] = True
+                    await ctx.send(f"{pipo_name} activated as tank")
+                if pipo["name"] == user["defender"]["name"]:
+                    user["defender"] = pipo
+        self.db["users"].update_one({"id": ctx.author.id}, {"$set": {"pipos": pipos}})
+    
     # Command to show wild pipos
     @commands.command()
     async def show_wild(self, ctx):

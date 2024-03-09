@@ -2,6 +2,7 @@ from pydantic import BaseModel
 
 class Pipo(BaseModel):
     wild: bool = False
+    tank: bool = False
     rarity: str
     price : int
     name: str

@@ -6,5 +6,4 @@ class User(BaseModel):
     name: str
     gold: int = 40
     defender: Pipo = None
-    tank: bool = False
     pipos: list = []
