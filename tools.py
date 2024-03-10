@@ -72,6 +72,7 @@ async def lvlup(pipo: dict, stat1: str, stat2: str) -> dict:
     pipo["exp"] = 0
     return pipo
 
+# Command to calculate the velocity
 async def velocity(pipo1: dict, pipo2: dict):
     #pipo1 faster
     if pipo1['speed'] > pipo2['speed']:

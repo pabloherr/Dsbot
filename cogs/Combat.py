@@ -21,7 +21,9 @@ class Combat(commands.Cog):
         
         await self.precombat(ctx, pipo1, pipo2)
         
-        winner = await self.fight(ctx, pipo1, pipo2)
+        winner, pipo1["hp"], pipo2["hp"] = await self.fight(ctx, pipo1, pipo2)
+        self.db["users"].update_one({"id": user1["id"]}, {"$set": user1})
+        
         if winner == 'pipo1':
             await self.postgame(ctx, winner= pipo1, loser = pipo2, loser_to=True, user_win = user1, user_lose= user2, leaderboards=True)
         else:
@@ -37,8 +39,8 @@ class Combat(commands.Cog):
         await ctx.send(pipo2)
         await self.precombat(ctx, pipo1, pipo2)
         
-        winner = await self.fight(ctx, pipo1, pipo2)
-        
+        winner, pipo1["hp"], pipo2["hp"] = await self.fight(ctx, pipo1, pipo2)
+        self.db["users"].update_one({"id": user["id"]}, {"$set": user})
         if winner == 'pipo1':
             await self.postgame(ctx, winner= pipo1, loser = pipo2, user_win = user)
         if winner == 'pipo2':
@@ -79,14 +81,17 @@ class Combat(commands.Cog):
         
         await ctx.send(f"{pipo1['name']} is ready to fight!")
         await ctx.send(f"{pipo2['name']} is ready to fight!")
-        winner = await self.fight(ctx, pipo1, pipo2)
+        winner, pipo1["hp"], pipo2["hp"] = await self.fight(ctx, pipo1, pipo2)
+        
+        self.db["users"].update_one({"id": user1["id"]}, {"$set": user1})
+        self.db["users"].update_one({"id": user2["id"]}, {"$set": user2})
         
         if winner == 'pipo1':
             await self.postgame(winner=pipo1, loser=pipo2, loser_to=True, bet= bet, user_win= user1, user_lose= user2, leaderboards=True)
         else:
             await self.postgame(winner=pipo2, loser=pipo1, loser_to=True,bet= bet, user_win= user2,user_lose= user1, leaderboards=True)
     
-    #combat pipo vs wild pipo
+    #combat pipo vs wild pipo of the list of survivors
     @commands.command(brief='Combat a wild pipo who survive a combat. !wild_combat <your_pipo_name> <wild_pipo_name>')
     async def wild_combat_def(self, ctx, pipo_name: str, wild_pipo: str):
         user = self.db["users"].find_one({"id": ctx.author.id})
@@ -95,7 +100,11 @@ class Combat(commands.Cog):
         
         await self.precombat(ctx, pipo1, pipo2)
         
-        winner = await self.fight(ctx, pipo1, pipo2)
+        winner, pipo1_hp, pipo2_hp = await self.fight(ctx, pipo1, pipo2)
+        
+        pipo1["hp"] = pipo1_hp
+        await ctx.send(f"{pipo1['name']} HP: {pipo1['hp']}")
+        self.db["users"].update_one({"id": user["id"]}, {"$set": user})
         if winner == 'pipo1':
             await self.postgame(ctx,ctx,winner= pipo1, loser = pipo2, user_win = user)
             self.db["wild_pipos"].delete_one({"name": wild_pipo})
@@ -165,7 +174,11 @@ class Combat(commands.Cog):
                 await ctx.send(f'<@{user_id}> confirmed the fight.')
         await ctx.send('go')
         
-        fight = await self.raid(ctx, pipo1, pipo2, pipo3, mega_pipo)
+        fight, pipo1["hp"], pipo2["hp"], pipo3["hp"] = await self.raid(ctx, pipo1, pipo2, pipo3, mega_pipo)
+        self.db["users"].update_one({"id": user1["id"]}, {"$set": user1})
+        self.db["users"].update_one({"id": user2["id"]}, {"$set": user2})
+        self.db["users"].update_one({"id": user3["id"]}, {"$set": user3})
+        
         mega_pipo["lvl"] = mega_pipo["lvl"]/2
         if fight:
             await self.postgame(ctx, winner= pipo1, loser = mega_pipo, user_win = user1)
@@ -217,7 +230,7 @@ class Combat(commands.Cog):
                 return random.choice(tanks)
             else:
                 return random.choice(dps)
-        
+        await ctx.send(f"----------------------------------------------------------------------------------------")
         while pipo1["hp"] > 0 or pipo2["hp"] > 0 or pipo3["hp"] > 0 and mega_pipo["hp"] > 0:
             mega_check = False
             await ctx.send(f".")
@@ -277,7 +290,7 @@ class Combat(commands.Cog):
                 if turn3 >= 12 and turn_mega >= 12:
                     speed_tie.append(pipo3)
                 for pipo in speed_tie:
-                    if pipo["passive"] == "Fight Fist":
+                    if pipo["passive"] == "Fight First":
                         if pipo == pipo1:
                             dmg_pipo1 += ff_dmg1
                         if pipo == pipo2:
@@ -285,7 +298,7 @@ class Combat(commands.Cog):
                         if pipo == pipo3:
                             dmg_pipo3 += ff_dmg3
                         pipo["speed"] += 200
-                    if mega_pipo["passive"] == "Fight Fist":
+                    if mega_pipo["passive"] == "Fight First":
                         mega_pipo["speed"] += 200
                         
                         
@@ -300,7 +313,7 @@ class Combat(commands.Cog):
                         if mega_pipo["hp"] > 0 and mega_check == False:
                             turn_mega = 0
                             
-                            if mega_pipo["passive"] == "Fight Fist":
+                            if mega_pipo["passive"] == "Fight First":
                                 dmg += ff_mega
                             
                             defender_pipo = defender()
@@ -322,7 +335,7 @@ class Combat(commands.Cog):
                         if mega_pipo["hp"] > 0 and mega_check == False:
                             turn_mega = 0
                             
-                            if mega_pipo["passive"] == "Fight Fist":
+                            if mega_pipo["passive"] == "Fight First":
                                 dmg += ff_mega
                             
                             defender_pipo = defender()
@@ -344,7 +357,7 @@ class Combat(commands.Cog):
                         if mega_pipo["hp"] > 0 and mega_check == False:
                             turn_mega = 0
                             
-                            if mega_pipo["passive"] == "Fight Fist":
+                            if mega_pipo["passive"] == "Fight First":
                                 dmg += ff_mega
                             
                             defender_pipo = defender()
@@ -358,43 +371,51 @@ class Combat(commands.Cog):
                         if not mega_check:
                             await ctx.send(f"   {mega_pipo['name']} deals {ff_mega} damage!")
                             
-                if pipo1["passive"] == "Fight Fist":
+                if pipo1["passive"] == "Fight First":
                     dmg_pipo1 -= ff_dmg1
                     pipo
-                if pipo2["passive"] == "Fight Fist":
+                if pipo2["passive"] == "Fight First":
                     dmg_pipo2 -= ff_dmg2
-                if pipo3["passive"] == "Fight Fist":
+                if pipo3["passive"] == "Fight First":
                     dmg_pipo3 -= ff_dmg3
-                if mega_pipo["passive"] == "Fight Fist":
+                if mega_pipo["passive"] == "Fight First":
                     ff_mega -= ff_mega
                     
+                if pipo1["hp"]<= 0:
+                    pipo1["hp"] = 0
+                    await ctx.send(f"   {pipo1['name']} fainted!")
+                if pipo2["hp"]<= 0:
+                    pipo2["hp"] = 0
+                    await ctx.send(f"   {pipo2['name']} fainted!")
+                if pipo3["hp"]<= 0:
+                    pipo3["hp"] = 0
+                    await ctx.send(f"   {pipo3['name']} fainted!")
+                if mega_pipo["hp"]<= 0:
+                    mega_pipo["hp"] = 0
                     
                 await ctx.send(f"   {pipo1['name']} HP: {pipo1['hp']} \n{pipo2['name']} HP: {pipo2['hp']} \n{pipo3['name']} HP: {pipo3['hp']} \n{mega_pipo['name']} HP: {mega_pipo['hp']}")
-        
-        
+                await ctx.send(f"----------------------------------------------------------------------------------------")
+        await ctx.send(f"----------------------------------------------------------------------------------------")
         await ctx.send("COMBAT ENDED!")
         if pipo1["hp"] <= 0 and pipo2["hp"] <= 0 and pipo3["hp"] <= 0:
             await ctx.send(f"   The team fainted!")
             await ctx.send(f"   {mega_pipo['name']} wins!")
-            pipo1["hp"] = pipo1["max_hp"]
-            pipo2["hp"] = pipo2["max_hp"]
-            pipo3["hp"] = pipo3["max_hp"]
+            return False, pipo1["hp"], pipo2["hp"], pipo3["hp"]
         else:
             await ctx.send(f"   {mega_pipo['name']} fainted!")
             await ctx.send(f"   The team wins!")
             pipo1["hp"] = pipo1["max_hp"]
             pipo2["hp"] = pipo2["max_hp"]
             pipo3["hp"] = pipo3["max_hp"]
-            return True
+            return True, pipo1["hp"], pipo2["hp"], pipo3["hp"]
     
     #combat pipo vs pipo
     async def fight(self, ctx, pipo1, pipo2):
         turn1 = 0
         turn2 = 0
         round = 0
-        
+        await ctx.send(f"----------------------------------------------------------------------------------------")
         while pipo1["hp"] > 0 and pipo2["hp"] > 0:
-            await ctx.send(f".")
             turn1 += pipo1["speed"]
             turn2 += pipo2["speed"]
             
@@ -423,10 +444,10 @@ class Combat(commands.Cog):
                 #FF
                 #both attack
                 if turn1 >= 12 and turn2 >= 12:
-                    if pipo1["passive"] == "Fight Fist":
+                    if pipo1["passive"] == 'Fight First':
                         dmg_pipo1 += ff_dmg1
                         pipo1["speed"] += 200
-                    if pipo2["passive"] == "Fight Fist":
+                    if pipo2["passive"] == 'Fight First':
                         dmg_pipo2 += ff_dmg2
                         pipo2["speed"] += 200
                     
@@ -447,29 +468,32 @@ class Combat(commands.Cog):
                         await ctx.send(f"   {pipo2['name']} deals {dmg_pipo2} damage!")
                         await ctx.send(f"   {pipo1['name']} deals {dmg_pipo1} damage!")
                         
-                if pipo1["passive"] == "Fight Fist":
+                if pipo1["passive"] == "Fight First":
                     dmg_pipo1 -= ff_dmg1
                     pipo1["speed"] -= 200
-                if pipo2["passive"] == "Fight Fist":
+                if pipo2["passive"] == "Fight First":
                     dmg_pipo2 -= ff_dmg2
                     pipo2["speed"] -= 200
+                if pipo1["hp"]<= 0:
+                    pipo1["hp"] = 0
+                    await ctx.send(f"   {pipo1['name']} fainted!")
+                if pipo2["hp"]<= 0:
+                    pipo2["hp"] = 0
+                    await ctx.send(f"   {pipo2['name']} fainted!")
                 
                 await ctx.send(f"   {pipo1['name']} HP: {pipo1['hp']} {pipo2['name']} HP: {pipo2['hp']}")
-        
-        
+                await ctx.send(f"----------------------------------------------------------------------------------------")
+        await ctx.send(f"----------------------------------------------------------------------------------------")
         await ctx.send("COMBAT ENDED!")
         if pipo1["hp"] <= 0:
             await ctx.send(f"   {pipo1['name']} fainted!")
             await ctx.send(f"   {pipo2['name']} wins!")
-            pipo1["hp"] = pipo1["max_hp"]
-            pipo2["hp"] = pipo2["max_hp"]
-            return 'pipo2'
+            return 'pipo2', pipo1["hp"], pipo2["hp"]
+
         else:
             await ctx.send(f"   {pipo2['name']} fainted!")
             await ctx.send(f"   {pipo1['name']} wins!")
-            pipo1["hp"] = pipo1["max_hp"]
-            pipo2["hp"] = pipo2["max_hp"]
-            return 'pipo1'
+            return 'pipo1', pipo1["hp"], pipo2["hp"]
     
     
     #exp gain and gold after combat and leaderboards

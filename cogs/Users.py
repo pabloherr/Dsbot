@@ -60,7 +60,7 @@ class Users(commands.Cog):
             return
         for pipo in user['pipos']:
             exp = lvl[pipo['lvl']+1]
-            await ctx.send(f"{pipo['name']} ({pipo['rarity']}) | Lvl:{pipo['lvl']} exp: {pipo['exp']}/{exp} \n{pipo['hp']} HP \n{pipo['attack']} ATK \n{pipo['defense']} DEF \n{pipo['speed']} SPD \nPassive: {pipo['passive']}\nTank: {str(pipo['tank'])} \n\n")
+            await ctx.send(f"{pipo['name']} ({pipo['rarity']}) | Lvl:{pipo['lvl']} exp: {pipo['exp']}/{exp} \n{pipo['hp']} / {pipo['max_hp']} HP \n{pipo['attack']} ATK \n{pipo['defense']} DEF \n{pipo['speed']} SPD \nPassive: {pipo['passive']}\nTank: {str(pipo['tank'])} \n\n")
 
     # Command to see other user's profile
     @commands.command(brief='Show other user\'s profile.')

@@ -13,9 +13,23 @@ class Pipos(commands.Cog):
         self.collection = self.db["wild_pipos"]
         self.collection2 = self.db["mega_pipos"]
         self.mega_pipo.start()
+        self.all_pipos_restore.start()
     
     def cog_unload(self):
         self.mega_pipo.cancel()
+        self.all_pipos_restore.cancel()
+    
+    @tasks.loop(minutes=30)
+    async def all_pipos_restore(self):
+        if not self.db["time"].find_one({"id": "all_pipos_restore"}):
+            self.db["time"].insert_one({"id": "all_pipos_restore", "time": datetime.datetime.now()})
+        if self.db["time"].find_one({"id": "all_pipos_restore"})["time"] < datetime.datetime.now():
+            self.db["time"].update_one({"id": "all_pipos_restore"}, {"$set": {"time": datetime.datetime.now() + datetime.timedelta(hours=3)}})
+        user = self.db["users"].find()
+        for u in user:
+            for pipo in u["pipos"]:
+                pipo["hp"] = pipo["max_hp"]
+        self.db["users"].update_many({}, {"$set": {"pipos": u["pipos"]}})
     
     
     # Rename the pipos
@@ -118,6 +132,7 @@ class Pipos(commands.Cog):
     @commands.command(brief='Use an item. !item <item> <pipo_name>')
     async def item(self, ctx, item:str, pipo_name: str):
         user = self.db["users"].find_one({"id": ctx.author.id})
+        pipo = next((pipo for pipo in user["pipos"] if pipo["name"] == pipo_name), None)
         if item not in ["potions", "super_potions", "hyper_potions", "max_potions", "passive_reroll"]:
             await ctx.send("Invalid item")
             return
@@ -166,8 +181,6 @@ class Pipos(commands.Cog):
             self.db["users"].update_one({"id": ctx.author.id}, {"$set": user})
             await ctx.send("Passive rerolled")
             await ctx.send(f"New passive: {pipo['passive']}")
-    
-    
-    
+
 async def setup(client):
     await client.add_cog(Pipos(client))
