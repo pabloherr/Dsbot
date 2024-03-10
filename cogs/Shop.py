@@ -87,7 +87,7 @@ class Shop(commands.Cog):
         await ctx.send("Shop restocked!")
         await self.shop(ctx)
 
-
+    # Restock the shop every 24 hours
     @tasks.loop(minutes=10)
     async def daily_obj_shop(self):
         if not self.db["time"].find_one({"id": "obj_shop"}):
@@ -116,6 +116,7 @@ class Shop(commands.Cog):
                 price = 100
             self.collection2.insert_one({"name": items[i], "stock": numbers[i], "price": price})
     
+    # Show the items shop
     @commands.command(brief='Show the shop where you can buy items.')
     async def item_shop(self, ctx):
         await ctx.send("Welcome to the shop! Here you can buy items with your gold.")
@@ -128,9 +129,10 @@ class Shop(commands.Cog):
         if self.collection2.count_documents({}) == 0:
             await ctx.send("OUT OF STOCK!")
     
+    # Buy an item
     @commands.command(brief='Buy an item from the shop. !buy_item <item_name>')
-    async def buy_item(self, ctx, item_number: int):
-        item = self.collection2.find_one({"name": item_number})
+    async def buy_item(self, ctx, item_name: str):
+        item = self.collection2.find_one({"name": item_name})
         
         if item is None:
             await ctx.send("Item not found")
@@ -145,7 +147,7 @@ class Shop(commands.Cog):
         user["gold"] -= item["price"]
         user["items"][item["name"]] += 1
         self.db["users"].update_one({"id": ctx.author.id}, {"$set": user})
-        self.collection2.update_one({"name": item_number}, {"$set": {"stock": item["stock"] - 1}})
+        self.collection2.update_one({"name": item_name}, {"$set": {"stock": item["stock"] - 1}})
         
         await ctx.send(f"{item["name"]} bought!")
     
