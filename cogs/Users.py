@@ -42,7 +42,9 @@ class Users(commands.Cog):
         else:
             defender = user['defender']['name']
         await ctx.send(f"User: {user["name"]} \nGold: {user['gold']} \nDefender: {defender} \nPipos: {len(user['pipos'])}")
-    
+        await ctx.send("ITEMS:")
+        for item in user['items']:
+            await ctx.send(f"{item}: {user['items'][item]}")
     # Command to show the user's pipos
     @commands.command()
     async def pipos(self, ctx):
@@ -74,6 +76,7 @@ class Users(commands.Cog):
     # Command to see other user's pipos
     @commands.command()
     async def other_pipos(self, ctx):
+        lvl = {1:0, 2:10, 3:40, 4:80, 5:160, 6:320, 7:640, 8:1280, 9:2560, 10:5120}
         user = self.collection.find_one({"id": ctx.message.mentions[0].id})
         if user is None:
             await ctx.send('User does not exist!')
@@ -82,7 +85,8 @@ class Users(commands.Cog):
             await ctx.send('No pipos!')
             return
         for pipo in user['pipos']:
-            await ctx.send(f"Lvl:1 / {pipo['name']} / {pipo['rarity']} \n{pipo['hp']} HP \n{pipo['attack']} ATK \n{pipo['defense']} DEF \n{pipo['speed']} SPD \n Passive: {pipo['passive']}")
+            exp = lvl[pipo['lvl']+1]
+            await ctx.send(f"{pipo['name']} ({pipo['rarity']}) | Lvl:{pipo['lvl']} exp: {pipo['exp']}/{exp} \n{pipo['hp']} HP \n{pipo['attack']} ATK \n{pipo['defense']} DEF \n{pipo['speed']} SPD \nPassive: {pipo['passive']}\nTank: {str(pipo['tank'])} \n\n")
 
     # Command to set a pipo as the user's defender
     @commands.command()

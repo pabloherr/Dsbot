@@ -43,7 +43,6 @@ class Combat(commands.Cog):
             await self.postgame(ctx, winner= pipo1, loser = pipo2, user_win = user)
         if winner == 'pipo2':
             self.db["wild_pipos"].insert_one(pipo2)
-            await self.postgame(ctx, winner= pipo2, loser = pipo1, loser_to=True)
     
     #combat other user
     @commands.command()
@@ -100,8 +99,6 @@ class Combat(commands.Cog):
         if winner == 'pipo1':
             await self.postgame(ctx,ctx,winner= pipo1, loser = pipo2, user_win = user)
             self.db["wild_pipos"].delete_one({"name": wild_pipo})
-        else:
-            await self.postgame(ctx, winner= pipo2, loser = pipo1, loser_to=True)
     
     #raid combat pipos vs mega pipo
     @commands.command()
@@ -177,6 +174,7 @@ class Combat(commands.Cog):
                 await self.postgame(ctx, winner= pipo3, loser = mega_pipo, user_win = user3)
     
     
+    
     #precombat
     async def precombat(self, ctx, pipo1, pipo2):
         if pipo1 is None:
@@ -188,6 +186,7 @@ class Combat(commands.Cog):
         
         await ctx.send(f"{pipo1['name']} is ready to fight!")
         await ctx.send(f"{pipo2['name']} is ready to fight!")
+    
     
     #combat [1:3]pipos vs [1:3]pipo
     async def raid(self, ctx, pipo1, pipo2, pipo3, mega_pipo):
@@ -387,7 +386,6 @@ class Combat(commands.Cog):
             pipo3["hp"] = pipo3["max_hp"]
             return True
     
-    
     #combat pipo vs pipo
     async def fight(self, ctx, pipo1, pipo2):
         turn1 = 0
@@ -484,15 +482,17 @@ class Combat(commands.Cog):
             
         
         #gold
-        self.db["users"].update_one({"id": user_win["id"]}, {"$inc": {"gold": gold}})
-        await ctx.send(f"{user_win['name']} gained {gold} gold")
+        if not user_win == None:
+            self.db["users"].update_one({"id": user_win["id"]}, {"$inc": {"gold": gold}})
+            await ctx.send(f"{user_win['name']} gained {gold} gold")
         
         #exp
-        user = self.db["users"].find_one({"id": user_win["id"]})
-        pipo = next((pipo for pipo in user["pipos"] if pipo["name"] == winner["name"]), None)
-        pipo["exp"] += exp
-        self.db["users"].update_one({"id": user_win["id"]}, {"$set": {"pipos": user["pipos"]}})
-        await ctx.send(f"{winner['name']} gained {exp} exp")
+        if not user_win == None:
+            user = self.db["users"].find_one({"id": user_win["id"]})
+            pipo = next((pipo for pipo in user["pipos"] if pipo["name"] == winner["name"]), None)
+            pipo["exp"] += exp
+            self.db["users"].update_one({"id": user_win["id"]}, {"$set": {"pipos": user["pipos"]}})
+            await ctx.send(f"{winner['name']} gained {exp} exp")
         
         #loser exp
         if loser_to:

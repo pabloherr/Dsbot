@@ -112,5 +112,60 @@ class Pipos(commands.Cog):
             self.collection2.update_one({"name": pipo["name"]}, {"$set": {"name": f"Mega {pipo['name']}"}})
     
     
+    # Command to use items
+    @commands.command()
+    async def item(self, ctx, item:str, pipo_name: str):
+        user = self.db["users"].find_one({"id": ctx.author.id})
+        if item not in ["potions", "super_potions", "hyper_potions", "max_potions", "passive_reroll"]:
+            await ctx.send("Invalid item")
+            return
+        
+        if user["items"][item] == 0:
+            await ctx.send("No items")
+            return
+        if item == "potions":
+            for pipo in user["pipos"]:
+                pipo["hp"] += 5
+                if pipo["hp"] > pipo["max_hp"]:
+                    pipo["hp"] = pipo["max_hp"]
+            user["items"]["potions"] -= 1
+            self.db["users"].update_one({"id": ctx.author.id}, {"$set": user})
+            await ctx.send("Potions used")
+        
+        elif item == "super_potions":
+            for pipo in user["pipos"]:
+                pipo["hp"] += 10
+                if pipo["hp"] > pipo["max_hp"]:
+                    pipo["hp"] = pipo["max_hp"]
+            user["items"]["super_potions"] -= 1
+            self.db["users"].update_one({"id": ctx.author.id}, {"$set": user})
+            await ctx.send("Super potions used")
+        
+        elif item == "hyper_potions":
+            for pipo in user["pipos"]:
+                pipo["hp"] += 20
+                if pipo["hp"] > pipo["max_hp"]:
+                    pipo["hp"] = pipo["max_hp"]
+            user["items"]["hyper_potions"] -= 1
+            self.db["users"].update_one({"id": ctx.author.id}, {"$set": user})
+            await ctx.send("Hyper potions used")
+        
+        elif item == "max_potions":
+            for pipo in user["pipos"]:
+                pipo["hp"] = pipo["max_hp"]
+            user["items"]["max_potions"] -= 1
+            self.db["users"].update_one({"id": ctx.author.id}, {"$set": user})
+            await ctx.send("Max potions used")
+            
+        elif item == "passive_reroll":
+            passives = ["None", "Invulnerable","Feel No Pain", "Lethal Hits", "Fight First"]
+            pipo["passive"] = random.choice(passives)
+            user["items"]["passive_reroll"] -= 1
+            self.db["users"].update_one({"id": ctx.author.id}, {"$set": user})
+            await ctx.send("Passive rerolled")
+            await ctx.send(f"New passive: {pipo['passive']}")
+    
+    
+    
 async def setup(client):
     await client.add_cog(Pipos(client))
