@@ -31,7 +31,7 @@ class Shop(commands.Cog):
             self.collection.insert_one(pipo)
     
     # Show the shop
-    @commands.command()
+    @commands.command(brief='Show the shop where you can buy Pipos.')
     async def pipo_shop(self, ctx):
         await ctx.send("Welcome to the shop! Here you can buy Pipos with your gold.")
         await ctx.send("Type !buy and de number of the pipo to buy it.")
@@ -47,7 +47,7 @@ class Shop(commands.Cog):
         await ctx.send("Type !restock to restock the shop for 50 gold.")
     
     # Buy a pipo
-    @commands.command()
+    @commands.command(brief='Buy a Pipo from the shop. !buy_pipo <pipo_name>')
     async def buy_pipo(self, ctx, pipo_number: str):
         pipo = self.collection.find_one({"name": pipo_number})
         
@@ -69,8 +69,8 @@ class Shop(commands.Cog):
         await ctx.send(f"{pipo["name"]} bought!")
     
     # Restock the shop
-    @commands.command()
-    async def restock_pshop(self, ctx):
+    @commands.command(brief='Restock the shop for 50 gold.')
+    async def restock(self, ctx):
         
         if self.db["users"].find_one({"id": ctx.author.id})["gold"] < 50:
             await ctx.send("Not enough gold")
@@ -116,7 +116,7 @@ class Shop(commands.Cog):
                 price = 100
             self.collection2.insert_one({"name": items[i], "stock": numbers[i], "price": price})
     
-    @commands.command()
+    @commands.command(brief='Show the shop where you can buy items.')
     async def item_shop(self, ctx):
         await ctx.send("Welcome to the shop! Here you can buy items with your gold.")
         await ctx.send("Type !buy and the number of the item to buy it.")
@@ -128,7 +128,7 @@ class Shop(commands.Cog):
         if self.collection2.count_documents({}) == 0:
             await ctx.send("OUT OF STOCK!")
     
-    @commands.command()
+    @commands.command(brief='Buy an item from the shop. !buy_item <item_name>')
     async def buy_item(self, ctx, item_number: int):
         item = self.collection2.find_one({"name": item_number})
         

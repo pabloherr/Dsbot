@@ -12,7 +12,7 @@ class Combat(commands.Cog):
 
 
     #combat defender
-    @commands.command()
+    @commands.command(brief='Combat the defender pipo of another user. !combat_def <your_pipo_name> <@user>')
     async def combat_def(self, ctx, pipo_name: str):
         user1 = self.db["users"].find_one({"id": ctx.author.id})
         user2 = self.db["users"].find_one({"id": ctx.message.mentions[0].id})
@@ -28,7 +28,7 @@ class Combat(commands.Cog):
             await self.postgame(ctx, pipo2, pipo1, loser_to=True, user_win= user2, user_lose= user1, leaderboards=True)
     
     #combat wild pipo
-    @commands.command()
+    @commands.command(brief='Combat a wild pipo. !wild_combat <your_pipo_name> <zone>(forest, desert, mountain)')
     async def wild_combat(self, ctx, pipo_name: str, zone: str):
         user = self.db["users"].find_one({"id": ctx.author.id})
         pipo1 = next((pipo for pipo in user["pipos"] if pipo["name"] == pipo_name), None)
@@ -45,7 +45,7 @@ class Combat(commands.Cog):
             self.db["wild_pipos"].insert_one(pipo2)
     
     #combat other user
-    @commands.command()
+    @commands.command(brief='Combat another user. !combat <your_pipo_name> <other_user_pipo_name> <@user>')
     async def combat(self, ctx, pipo1: str, pipo2:str, bet = 0):
         await ctx.send(f'{ctx.message.mentions[0].name} confirm the fight with yes or no')
         def check(m):
@@ -87,7 +87,7 @@ class Combat(commands.Cog):
             await self.postgame(winner=pipo2, loser=pipo1, loser_to=True,bet= bet, user_win= user2,user_lose= user1, leaderboards=True)
     
     #combat pipo vs wild pipo
-    @commands.command()
+    @commands.command(brief='Combat a wild pipo who survive a combat. !wild_combat <your_pipo_name> <wild_pipo_name>')
     async def wild_combat_def(self, ctx, pipo_name: str, wild_pipo: str):
         user = self.db["users"].find_one({"id": ctx.author.id})
         pipo1 = next((pipo for pipo in user["pipos"] if pipo["name"] == pipo_name), None)
@@ -101,7 +101,8 @@ class Combat(commands.Cog):
             self.db["wild_pipos"].delete_one({"name": wild_pipo})
     
     #raid combat pipos vs mega pipo
-    @commands.command()
+    @commands.command(brief='Combat a mega pipo. !mega_raid <mega_pipo_name> <@user1> <@user2>',
+                      description='The mega pipo is a boss who can be defeated by a team of 3 pipos of 3 different users')
     async def mega_raid(self, ctx,mega_pipo: str = None):
         user1 = None
         user2 = None

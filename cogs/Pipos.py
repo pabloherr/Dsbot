@@ -19,7 +19,7 @@ class Pipos(commands.Cog):
     
     
     # Rename the pipos
-    @commands.command()
+    @commands.command(brief='Rename a Pipo. !rename <pipo_name> <new_name>')
     async def rename(self, ctx, pipo_name: str, new_name: str):
         user = self.db["users"].find_one({"id": ctx.author.id})
         pipo = next((pipo for pipo in user["pipos"] if pipo["name"] == pipo_name), None)
@@ -31,7 +31,8 @@ class Pipos(commands.Cog):
         await ctx.send(f"{pipo_name} renamed to {new_name}")
 
     # Lvl up the pipos
-    @commands.command()
+    @commands.command(brief='Lvl up a Pipo. !levelup <pipo_name> <stat1> <stat2>',
+                      description='Stat1 and stat2 are the stats to lvl up. The stats can be hp, attack, defense or speed. The stats must be different. If the stat is hp the hp will raise by 2')
     async def levelup(self, ctx, pipo_name: str, stat1, stat2):
         
         lvl = {1:0, 2:10, 3:40, 4:80, 5:160, 6:320, 7:640, 8:1280, 9:2560, 10:5120}
@@ -70,7 +71,8 @@ class Pipos(commands.Cog):
         await ctx.send(f"{pipo_name} lvl up! \n{stat1} +1 \n{stat2} +1")
     
     # Command to activate and deactivate the pipo as tank
-    @commands.command()
+    @commands.command(brief='Activate or deactivate a Pipo as tank. !tank <pipo_name>',
+                      description=' The tank have more probability to be attacked in the raids')
     async def tank(self, ctx, pipo_name: str):
         user = self.db["users"].find_one({"id": ctx.author.id})
         pipos = self.db["users"].find_one({"id": ctx.author.id})["pipos"]
@@ -90,7 +92,7 @@ class Pipos(commands.Cog):
         self.db["users"].update_one({"id": ctx.author.id}, {"$set": {"pipos": pipos}})
     
     # Command to show wild pipos
-    @commands.command()
+    @commands.command(brief='Show the wild pipos who survived a combat')
     async def show_wild(self, ctx):
         pipos = self.collection.find({})
         for pipo in pipos:
@@ -113,7 +115,7 @@ class Pipos(commands.Cog):
     
     
     # Command to use items
-    @commands.command()
+    @commands.command(brief='Use an item. !item <item> <pipo_name>')
     async def item(self, ctx, item:str, pipo_name: str):
         user = self.db["users"].find_one({"id": ctx.author.id})
         if item not in ["potions", "super_potions", "hyper_potions", "max_potions", "passive_reroll"]:
