@@ -41,7 +41,7 @@ class Users(commands.Cog):
             defender = "None"
         else:
             defender = user['defender']['name']
-        await ctx.send(f"User: {user["name"]}\n Gold: {user['gold']} \nDefender: {defender} \nPipos: {len(user['pipos'])}")
+        await ctx.send(f"User: {user["name"]} \nGold: {user['gold']} \nDefender: {defender} \nPipos: {len(user['pipos'])}")
     
     # Command to show the user's pipos
     @commands.command()
@@ -56,7 +56,7 @@ class Users(commands.Cog):
             return
         for pipo in user['pipos']:
             exp = lvl[pipo['lvl']+1]
-            await ctx.send(f"{pipo['name']} ({pipo['rarity']}) | Lvl:{pipo['lvl']} exp: {pipo['exp']}/{exp} \n{pipo['hp']} HP \n{pipo['attack']} ATK \n{pipo['defense']} DEF \n{pipo['speed']} SPD \nPassive: {pipo['passive']}")
+            await ctx.send(f"{pipo['name']} ({pipo['rarity']}) | Lvl:{pipo['lvl']} exp: {pipo['exp']}/{exp} \n{pipo['hp']} HP \n{pipo['attack']} ATK \n{pipo['defense']} DEF \n{pipo['speed']} SPD \nPassive: {pipo['passive']}\nTank: {str(pipo['tank'])} \n\n")
 
     # Command to see other user's profile
     @commands.command()
@@ -96,18 +96,5 @@ class Users(commands.Cog):
         self.collection.update_one({"id": ctx.author.id}, {"$set": user})
         await ctx.send(f"{pipo_name} set as defender")
 
-    # Command to activate and deactivate the tank mode
-    @commands.command()
-    async def tank(self, ctx):
-        user = self.collection.find_one({"id": ctx.author.id})
-        if user["tank"] == False:
-            user["tank"] = True
-            self.collection.update_one({"id": ctx.author.id}, {"$set": user})
-            await ctx.send("Tank mode activated")
-        else:
-            user["tank"] = False
-            self.collection.update_one({"id": ctx.author.id}, {"$set": user})
-            await ctx.send("Tank mode deactivated")
-            
 async def setup(client):
     await client.add_cog(Users(client))
