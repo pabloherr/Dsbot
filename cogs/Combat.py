@@ -36,7 +36,6 @@ class Combat(commands.Cog):
         pipo1 = next((pipo for pipo in user["pipos"] if pipo["name"] == pipo_name), None)
         pipo2 = await wild(zone)
         
-        await ctx.send(pipo2)
         await self.precombat(ctx, pipo1, pipo2)
         
         winner, pipo1["hp"], pipo2["hp"] = await self.fight(ctx, pipo1, pipo2)
