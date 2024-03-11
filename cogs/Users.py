@@ -22,7 +22,8 @@ class Users(commands.Cog):
         user = self.collection.find_one({"id": ctx.author.id})
         await ctx.send(f'Welcome {user["name"]}!')
         await ctx.send('Use !shop to buy a pipo')
-    
+        await ctx.send('Use !help to see all commands')
+        
         #Command to show the leaderboards
     
     @commands.command(brief='Show the leaderboards.')
