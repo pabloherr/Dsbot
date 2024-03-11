@@ -25,11 +25,11 @@ class Pipos(commands.Cog):
             self.db["time"].insert_one({"id": "all_pipos_restore", "time": datetime.datetime.now()})
         if self.db["time"].find_one({"id": "all_pipos_restore"})["time"] < datetime.datetime.now():
             self.db["time"].update_one({"id": "all_pipos_restore"}, {"$set": {"time": datetime.datetime.now() + datetime.timedelta(hours=3)}})
-        user = self.db["users"].find()
-        for u in user:
-            for pipo in u["pipos"]:
-                pipo["hp"] = pipo["max_hp"]
-        self.db["users"].update_many({}, {"$set": {"pipos": u["pipos"]}})
+            user = self.db["users"].find()
+            for u in user:
+                for pipo in u["pipos"]:
+                    pipo["hp"] = pipo["max_hp"]
+                    self.db["users"].update_one({"id": u["id"]}, {"$set": {"pipos": u["pipos"]}})
     
     
     # Rename the pipos
@@ -119,13 +119,13 @@ class Pipos(commands.Cog):
             self.db["time"].insert_one({"id": "mega_pipo", "time": datetime.datetime.now()})
         if self.db["time"].find_one({"id": "mega_pipo"})["time"] < datetime.datetime.now():
             self.db["time"].update_one({"id": "mega_pipo"}, {"$set": {"time": datetime.datetime.now() + datetime.timedelta(hours=168)}})
-        if  self.collection2.count_documents({}) > 0:
-            self.collection2.delete_many({})
-        mega_zone = ["megaforest", "megadesert", "megamountain"] 
-        for zone in mega_zone:
-            pipo = await wild(zone)
-            self.collection2.insert_one(pipo)
-            self.collection2.update_one({"name": pipo["name"]}, {"$set": {"name": f"Mega {pipo['name']}"}})
+            if  self.collection2.count_documents({}) > 0:
+                self.collection2.delete_many({})
+            mega_zone = ["megaforest", "megadesert", "megamountain"] 
+            for zone in mega_zone:
+                pipo = await wild(zone)
+                self.collection2.insert_one(pipo)
+                self.collection2.update_one({"name": pipo["name"]}, {"$set": {"name": f"Mega {pipo['name']}"}})
     
     
     # Command to use items

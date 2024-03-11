@@ -25,10 +25,10 @@ class Shop(commands.Cog):
             self.db["time"].insert_one({"id": "shop", "time": datetime.datetime.now()})
         if self.db["time"].find_one({"id": "shop"})["time"] < datetime.datetime.now():
             self.db["time"].update_one({"id": "shop"}, {"$set": {"time": datetime.datetime.now() + datetime.timedelta(hours=24)}})
-        self.collection.delete_many({})
-        for i in range(6):
-            pipo = await random_pipo()
-            self.collection.insert_one(pipo)
+            self.collection.delete_many({})
+            for i in range(6):
+                pipo = await random_pipo()
+                self.collection.insert_one(pipo)
     
     # Show the shop
     @commands.command(brief='Show the shop where you can buy Pipos.')
@@ -94,27 +94,26 @@ class Shop(commands.Cog):
             self.db["time"].insert_one({"id": "obj_shop", "time": datetime.datetime.now()})
         if self.db["time"].find_one({"id": "obj_shop"})["time"] < datetime.datetime.now():
             self.db["time"].update_one({"id": "obj_shop"}, {"$set": {"time": datetime.datetime.now() + datetime.timedelta(hours=3)}})
-        self.collection2.delete_many({})
-        
-        items = ["potions", "super_potions", "hyper_potions", "max_potions", "passive_reroll"]
-        numbers = [random.randint(1, 50) for _ in range(4)]
-        while sum(numbers) > 50:
+            self.collection2.delete_many({})
+            items = ["potions", "super_potions", "hyper_potions", "max_potions", "passive_reroll"]
             numbers = [random.randint(1, 50) for _ in range(4)]
-        numbers.append(50 - sum(numbers))
-        for i in range(5):
-            if items[i] == "potions":
-                price = 5
-            elif items[i] == "super_potions":
-                price = 10
-            elif items[i] == "hyper_potions":
-                price = 15
-            elif items[i] == "max_potions":
-                price = 30
-            elif items[i] == "xp_potion":
-                price = 20
-            elif items[i] == "passive_reroll":
-                price = 100
-            self.collection2.insert_one({"name": items[i], "stock": numbers[i], "price": price})
+            while sum(numbers) > 50:
+                numbers = [random.randint(1, 50) for _ in range(4)]
+            numbers.append(50 - sum(numbers))
+            for i in range(5):
+                if items[i] == "potions":
+                    price = 5
+                elif items[i] == "super_potions":
+                    price = 10
+                elif items[i] == "hyper_potions":
+                    price = 15
+                elif items[i] == "max_potions":
+                    price = 30
+                elif items[i] == "xp_potion":
+                    price = 20
+                elif items[i] == "passive_reroll":
+                    price = 100
+                self.collection2.insert_one({"name": items[i], "stock": numbers[i], "price": price})
     
     # Show the items shop
     @commands.command(brief='Show the shop where you can buy items.')
