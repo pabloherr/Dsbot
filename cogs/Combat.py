@@ -370,16 +370,16 @@ class Combat(commands.Cog):
                         if not mega_check:
                             await ctx.send(f"   {mega_pipo['name']} deals {ff_mega} damage!")
                             
-                if pipo1["passive"] == "Fight First":
-                    dmg_pipo1 -= ff_dmg1
-                    pipo
-                if pipo2["passive"] == "Fight First":
-                    dmg_pipo2 -= ff_dmg2
-                if pipo3["passive"] == "Fight First":
-                    dmg_pipo3 -= ff_dmg3
-                if mega_pipo["passive"] == "Fight First":
-                    ff_mega -= ff_mega
-                    
+                    if pipo1["passive"] == "Fight First":
+                        dmg_pipo1 -= ff_dmg1
+                        pipo
+                    if pipo2["passive"] == "Fight First":
+                        dmg_pipo2 -= ff_dmg2
+                    if pipo3["passive"] == "Fight First":
+                        dmg_pipo3 -= ff_dmg3
+                    if mega_pipo["passive"] == "Fight First":
+                        ff_mega -= ff_mega
+                        
                 if pipo1["hp"]<= 0:
                     pipo1["hp"] = 0
                     await ctx.send(f"   {pipo1['name']} fainted!")
@@ -467,12 +467,12 @@ class Combat(commands.Cog):
                         await ctx.send(f"   {pipo2['name']} deals {dmg_pipo2} damage!")
                         await ctx.send(f"   {pipo1['name']} deals {dmg_pipo1} damage!")
                         
-                if pipo1["passive"] == "Fight First":
-                    dmg_pipo1 -= ff_dmg1
-                    pipo1["speed"] -= 200
-                if pipo2["passive"] == "Fight First":
-                    dmg_pipo2 -= ff_dmg2
-                    pipo2["speed"] -= 200
+                    if pipo1["passive"] == "Fight First":
+                        dmg_pipo1 -= ff_dmg1
+                        pipo1["speed"] -= 200
+                    if pipo2["passive"] == "Fight First":
+                        dmg_pipo2 -= ff_dmg2
+                        pipo2["speed"] -= 200
                 if pipo1["hp"]<= 0:
                     pipo1["hp"] = 0
                     await ctx.send(f"   {pipo1['name']} fainted!")
