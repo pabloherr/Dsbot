@@ -104,7 +104,7 @@ async def velocity(pipo1: dict, pipo2: dict):
                 pipo2["speed"] -= 2
             else:
                 pipo2["speed"] += 2
-            return pipo1
+        return pipo1
     #pipo2 faster
     elif pipo1['speed'] < pipo2['speed']:
         if pipo1["passive"] == "Fight First":
@@ -143,7 +143,6 @@ async def damage(pipoatk: dict, pipodef: dict) -> int:
     if pipodef['passive'] == "Feel No Pain":
         feel = True
         ###############
-        print(pipoatk['passive'])
         if pipoatk['passive'] == "Lethal Hits":
             lethal = cl(pipoatk['attack']/2)
         #########

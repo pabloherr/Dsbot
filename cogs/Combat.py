@@ -552,10 +552,8 @@ class Combat(commands.Cog):
                 piposlow = pipo2
             else:
                 piposlow = pipo1
-                
-                
-                await ctx.send(f"{pipofast["name"]}")
-                await ctx.send(f"{piposlow["name"]}")
+            
+            
             ################################
             dmg = await damage(pipofast, piposlow)
             ################################
