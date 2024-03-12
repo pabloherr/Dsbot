@@ -31,11 +31,13 @@ class Shop(commands.Cog):
                 self.collection.insert_one(pipo)
     
     # Show the shop
-    @commands.command(brief='Show the shop where you can buy Pipos.')
+    @commands.command(brief='Show the shop where you can buy Pipos.',
+                      aliases=['ps'])
     async def pipo_shop(self, ctx):
         await ctx.send("Welcome to the shop! Here you can buy Pipos with your gold.")
         await ctx.send("Type !buy and de number of the pipo to buy it.")
         await ctx.send("Here are the Pipos available: \n\n")
+        await ctx.send(f"{ctx.author} you have {self.db["users"].find_one({"id": ctx.author.id})["gold"]} gold.")
         
         for i, pipo in enumerate(self.collection.find()):
             await ctx.send(f"{i+1}. {pipo["name"]} {pipo["rarity"]} \n{pipo["hp"]} HP \n{pipo["attack"]}ATK \n{pipo["defense"]} DEF \n{pipo["speed"]} SPD \n Passive:{pipo["passive"]} \nPrice:{pipo["price"]}\n\n")
@@ -47,7 +49,8 @@ class Shop(commands.Cog):
         await ctx.send("Type !restock to restock the shop for 50 gold.")
     
     # Buy a pipo
-    @commands.command(brief='Buy a Pipo from the shop. !buy_pipo <pipo_name>')
+    @commands.command(brief='Buy a Pipo from the shop. !buy_pipo <pipo_name>',
+                      aliases=['bp'])
     async def buy_pipo(self, ctx, pipo_number: str):
         pipo = self.collection.find_one({"name": pipo_number})
         
@@ -116,20 +119,22 @@ class Shop(commands.Cog):
                 self.collection2.insert_one({"name": items[i], "stock": numbers[i], "price": price})
     
     # Show the items shop
-    @commands.command(brief='Show the shop where you can buy items.')
+    @commands.command(brief='Show the shop where you can buy items.',
+                      alises=['is'])
     async def item_shop(self, ctx):
         await ctx.send("Welcome to the shop! Here you can buy items with your gold.")
         await ctx.send("Type !buy and the number of the item to buy it.")
         await ctx.send("Here are the items available: \n\n")
         
         for i, item in enumerate(self.collection2.find()):
-            await ctx.send(f"{i+1}. {item["name"]} \nStock:{item["stock"]}\n\n")
+            await ctx.send(f"{i+1}. {item["name"]} \nPrice:{item["price"]} \nStock:{item["stock"]}\n\n")
         
         if self.collection2.count_documents({}) == 0:
             await ctx.send("OUT OF STOCK!")
     
     # Buy an item
-    @commands.command(brief='Buy an item from the shop. !buy_item <item_name>')
+    @commands.command(brief='Buy an item from the shop. !buy_item <item_name>',
+                      aliases=['bi'])
     async def buy_item(self, ctx, item_name: str):
         item = self.collection2.find_one({"name": item_name})
         

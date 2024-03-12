@@ -26,14 +26,16 @@ class Users(commands.Cog):
         
         #Command to show the leaderboards
     
-    @commands.command(brief='Show the leaderboards.')
+    @commands.command(brief='Show the leaderboards.',
+                      aliases=['lb'])
     async def leaderboard(self, ctx):
         leaderboard = self.db["leaderboard"].find().sort("points", -1)
         for user in leaderboard:
             await ctx.send(f"1 | {user['name']} - {user['points']} points")
     
     # Command to show the user's profile
-    @commands.command(brief='Show your profile.')
+    @commands.command(brief='Show your profile.',
+                      aliases=['pr'])
     async def profile(self, ctx):
         user = self.collection.find_one({"id": ctx.author.id})
         if user is None:
@@ -49,7 +51,8 @@ class Users(commands.Cog):
             await ctx.send(f"{item}: {user['items'][item]}")
     
     # Command to show the user's pipos
-    @commands.command(brief='Show your pipos.')
+    @commands.command(brief='Show your pipos.',
+                      aliases=['pi'])
     async def pipos(self, ctx):
         lvl = {1:0, 2:10, 3:40, 4:80, 5:160, 6:320, 7:640, 8:1280, 9:2560, 10:5120}
         user = self.collection.find_one({"id": ctx.author.id})
@@ -64,7 +67,8 @@ class Users(commands.Cog):
             await ctx.send(f"{pipo['name']} ({pipo['rarity']}) | Lvl:{pipo['lvl']} exp: {pipo['exp']}/{exp} \n{pipo['hp']} / {pipo['max_hp']} HP \n{pipo['attack']} ATK \n{pipo['defense']} DEF \n{pipo['speed']} SPD \nPassive: {pipo['passive']}\nTank: {str(pipo['tank'])} \n\n")
 
     # Command to see other user's profile
-    @commands.command(brief='Show other user\'s profile.')
+    @commands.command(brief='Show other user\'s profile.',
+                      aliases=['opr'])
     async def other_profile(self, ctx):
         user = self.collection.find_one({"id": ctx.message.mentions[0].id})
         if user is None:
@@ -80,7 +84,8 @@ class Users(commands.Cog):
             await ctx.send(f"{item}: {user['items'][item]}")
     
     # Command to see other user's pipos
-    @commands.command(brief='Show other user\'s pipos.')
+    @commands.command(brief='Show other user\'s pipos.',
+                      aliases=['opi'])
     async def other_pipos(self, ctx):
         lvl = {1:0, 2:10, 3:40, 4:80, 5:160, 6:320, 7:640, 8:1280, 9:2560, 10:5120}
         user = self.collection.find_one({"id": ctx.message.mentions[0].id})
@@ -92,10 +97,11 @@ class Users(commands.Cog):
             return
         for pipo in user['pipos']:
             exp = lvl[pipo['lvl']+1]
-            await ctx.send(f"{pipo['name']} ({pipo['rarity']}) | Lvl:{pipo['lvl']} exp: {pipo['exp']}/{exp} \n{pipo['hp']} HP \n{pipo['attack']} ATK \n{pipo['defense']} DEF \n{pipo['speed']} SPD \nPassive: {pipo['passive']}\nTank: {str(pipo['tank'])} \n\n")
+            await ctx.send(f"{pipo['name']} ({pipo['rarity']}) | Lvl:{pipo['lvl']} exp: {pipo['exp']}/{exp} \n{pipo['hp']} / {pipo['max_hp']} HP \n{pipo['attack']} ATK \n{pipo['defense']} DEF \n{pipo['speed']} SPD \nPassive: {pipo['passive']}\nTank: {str(pipo['tank'])} \n\n")
 
     # Command to set a pipo as the user's defender
-    @commands.command(brief='Set a pipo as your defender.')
+    @commands.command(brief='Set a pipo as your defender.',
+                      aliases=['sd'])
     async def set_defender(self, ctx, pipo_name: str):
         user = self.collection.find_one({"id": ctx.author.id})
         pipo = next((pipo for pipo in user["pipos"] if pipo["name"] == pipo_name), None)

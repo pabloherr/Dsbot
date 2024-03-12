@@ -12,16 +12,19 @@ class Combat(commands.Cog):
 
 
     #combat defender
-    @commands.command(brief='Combat the defender pipo of another user. !combat_def <your_pipo_name> <@user>')
+    @commands.command(brief='Combat the defender pipo of another user. !combat_def <your_pipo_name> <@user>',
+                        aliases=['cd'])
     async def combat_def(self, ctx, pipo_name: str):
         user1 = self.db["users"].find_one({"id": ctx.author.id})
         user2 = self.db["users"].find_one({"id": ctx.message.mentions[0].id})
         pipo1 = next((pipo for pipo in user1["pipos"] if pipo["name"] == pipo_name), None)
         pipo2 = user2["defender"]
         
-        await self.precombat(ctx, pipo1, pipo2)
+        if await self.precombat(ctx, pipo1, pipo2) == "cancel":
+            return
         
-        winner, pipo1["hp"], pipo2["hp"] = await self.fight(ctx, pipo1, pipo2)
+        
+        winner, pipo1["hp"], pipo2["hp"] = await self.alt_fight(ctx, pipo1, pipo2)
         self.db["users"].update_one({"id": user1["id"]}, {"$set": user1})
         
         if winner == 'pipo1':
@@ -30,23 +33,30 @@ class Combat(commands.Cog):
             await self.postgame(ctx, pipo2, pipo1, loser_to=True, user_win= user2, user_lose= user1, leaderboards=True)
     
     #combat wild pipo
-    @commands.command(brief='Combat a wild pipo. !wild_combat <your_pipo_name> <zone>(forest, desert, mountain)')
-    async def wild_combat(self, ctx, pipo_name: str, zone: str):
+    @commands.command(brief='Combat a wild pipo. !wild_combat <your_pipo_name> <zone>(forest, desert, mountain)',
+                        alises=['wc'])
+    async def wc(self, ctx, pipo_name: str, zone: str):
         user = self.db["users"].find_one({"id": ctx.author.id})
         pipo1 = next((pipo for pipo in user["pipos"] if pipo["name"] == pipo_name), None)
         pipo2 = await wild(zone)
         
-        await self.precombat(ctx, pipo1, pipo2)
+        if await self.precombat(ctx, pipo1, pipo2) == "cancel":
+            return
         
-        winner, pipo1["hp"], pipo2["hp"] = await self.fight(ctx, pipo1, pipo2)
+        winner, pipo1["hp"], pipo2["hp"] = await self.alt_fight(ctx, pipo1, pipo2)
+        if pipo1["lvl"] < 3 and pipo1["hp"] == 0 and pipo2["lvl"] > pipo1["lvl"] and pipo2["lvl"] < 4:
+            pipo1["hp"] += int(cl(pipo1["max_hp"]/2))
         self.db["users"].update_one({"id": user["id"]}, {"$set": user})
         if winner == 'pipo1':
             await self.postgame(ctx, winner= pipo1, loser = pipo2, user_win = user)
         if winner == 'pipo2':
+            if pipo1["lvl"] < 3:
+                await self.postgame(ctx, winner= pipo2, loser = pipo1, user_lose = user, loser_to=True)
             self.db["wild_pipos"].insert_one(pipo2)
     
     #combat other user
-    @commands.command(brief='Combat another user. !combat <your_pipo_name> <other_user_pipo_name> <@user>')
+    @commands.command(brief='Combat another user. !combat <your_pipo_name> <other_user_pipo_name> <@user>',
+                        aliases=['c'])
     async def combat(self, ctx, pipo1: str, pipo2:str):
         await ctx.send(f'{ctx.message.mentions[0].name} confirm the fight with yes or no')
         def check(m):
@@ -81,7 +91,7 @@ class Combat(commands.Cog):
         
         await ctx.send(f"{pipo1['name']} is ready to fight!")
         await ctx.send(f"{pipo2['name']} is ready to fight!")
-        winner, pipo1["hp"], pipo2["hp"] = await self.fight(ctx, pipo1, pipo2)
+        winner, pipo1["hp"], pipo2["hp"] = await self.alt_fight(ctx, pipo1, pipo2)
         
         self.db["users"].update_one({"id": user1["id"]}, {"$set": user1})
         self.db["users"].update_one({"id": user2["id"]}, {"$set": user2})
@@ -92,26 +102,28 @@ class Combat(commands.Cog):
             await self.postgame(winner=pipo2, loser=pipo1, loser_to=True, user_win= user2,user_lose= user1, leaderboards=True)
     
     #combat pipo vs wild pipo of the list of survivors
-    @commands.command(brief='Combat a wild pipo who survive a combat. !wild_combat <your_pipo_name> <wild_pipo_name>')
+    @commands.command(brief='Combat a wild pipo who survive a combat. !wild_combat <your_pipo_name> <wild_pipo_name>',
+                        aliases=['wcd'])
     async def wild_combat_def(self, ctx, pipo_name: str, wild_pipo: str):
         user = self.db["users"].find_one({"id": ctx.author.id})
         pipo1 = next((pipo for pipo in user["pipos"] if pipo["name"] == pipo_name), None)
         pipo2 = self.db["wild_pipos"].find_one({"name": wild_pipo})
         
-        await self.precombat(ctx, pipo1, pipo2)
+        if await self.precombat(ctx, pipo1, pipo2) == "cancel":
+            return
         
-        winner, pipo1_hp, pipo2_hp = await self.fight(ctx, pipo1, pipo2)
+        winner, pipo1_hp, pipo2_hp = await self.alt_fight(ctx, pipo1, pipo2)
         
         pipo1["hp"] = pipo1_hp
         await ctx.send(f"{pipo1['name']} HP: {pipo1['hp']}")
-        self.db["users"].update_one({"id": user["id"]}, {"$set": user})
         if winner == 'pipo1':
             await self.postgame(ctx,ctx,winner= pipo1, loser = pipo2, user_win = user)
             self.db["wild_pipos"].delete_one({"name": wild_pipo})
     
     #raid combat pipos vs mega pipo
     @commands.command(brief='Combat a mega pipo. !mega_raid <mega_pipo_name> <@user1> <@user2>',
-                      description='The mega pipo is a boss who can be defeated by a team of 3 pipos of 3 different users')
+                        description='The mega pipo is a boss who can be defeated by a team of 3 pipos of 3 different users',
+                        aliases=['mr'])
     async def mega_raid(self, ctx,mega_pipo: str = None):
         user1 = None
         user2 = None
@@ -189,6 +201,33 @@ class Combat(commands.Cog):
     
     
     
+    
+    # alternate wild_combat
+        #combat wild pipo
+    @commands.command(brief='Combat a wild pipo. !wild_combat <your_pipo_name> <zone>(forest, desert, mountain)',
+                        alises=['awc'])
+    async def awc(self, ctx, pipo_name: str, zone: str):
+        user = self.db["users"].find_one({"id": ctx.author.id})
+        pipo1 = next((pipo for pipo in user["pipos"] if pipo["name"] == pipo_name), None)
+        pipo2 = await wild(zone)
+        
+        if await self.precombat(ctx, pipo1, pipo2) == "cancel":
+            return
+        
+        winner, pipo1["hp"], pipo2["hp"] = await self.alt_fight(ctx, pipo1, pipo2)
+        await ctx.send(f"FELI PUTO")
+        if pipo1["lvl"] < 3 and pipo1["hp"] == 0 and pipo2["lvl"] > pipo1["lvl"] and pipo2["lvl"] < 4:
+            pipo1["hp"] += int(cl(pipo1["max_hp"]/2))
+            
+        self.db["users"].update_one({"id": user["id"]}, {"$set": user})
+        if winner == 'pipo1':
+            await self.postgame(ctx, winner= pipo1, loser = pipo2, user_win = user)
+        if winner == 'pipo2':
+            if pipo1["lvl"] < 3:
+                await self.postgame(ctx, winner= pipo2, loser = pipo1, user_lose = user, loser_to=True)
+            self.db["wild_pipos"].insert_one(pipo2)
+    
+    
     #precombat
     async def precombat(self, ctx, pipo1, pipo2):
         if pipo1 is None:
@@ -197,6 +236,12 @@ class Combat(commands.Cog):
         if pipo2 is None:
             await ctx.send("Pipo2 not found")
             return
+        if pipo1["hp"] <= 0:
+            await ctx.send(f"{pipo1["name"]} is fainted")
+            return "cancel"
+        if pipo2["hp"] <= 0:
+            await ctx.send(f"{pipo2["name"]} is fainted")
+            return "cancel"
         
         await ctx.send(f"{pipo1['name']} is ready to fight!")
         await ctx.send(f"{pipo2['name']} is ready to fight!")
@@ -495,6 +540,58 @@ class Combat(commands.Cog):
             await ctx.send(f"   {pipo1['name']} wins!")
             return 'pipo1', pipo1["hp"], pipo2["hp"]
     
+    #alterate combat
+    async def alt_fight(self, ctx, pipo1, pipo2):
+        round = 0
+        while pipo1["hp"] > 0 and pipo2["hp"] > 0:
+            round += 1
+            pipofast = await velocity(pipo1, pipo2)
+            await ctx.send(f"----------------------------------------------------------------------------------------")
+            await ctx.send(f"ROUND {round}")
+            if pipofast == pipo1:
+                piposlow = pipo2
+            else:
+                piposlow = pipo1
+                
+                
+                await ctx.send(f"{pipofast["name"]}")
+                await ctx.send(f"{piposlow["name"]}")
+            ################################
+            dmg = await damage(pipofast, piposlow)
+            ################################
+            
+            
+            piposlow["hp"] -= dmg
+            await ctx.send(f"{pipofast['name']} attacks!")
+            await ctx.send(f"Dealing {dmg} damage!")
+            if piposlow["hp"] <= 0:
+                piposlow["hp"] = 0
+                await ctx.send(f"{piposlow['name']} fainted!")
+            else:
+                dmg = await damage(piposlow, pipofast)
+                pipofast["hp"] -= dmg
+                await ctx.send(f"{piposlow['name']} attacks!")
+                await ctx.send(f"Dealing {dmg} damage!")
+                if pipofast["hp"] <= 0:
+                    pipofast["hp"] = 0
+                    await ctx.send(f"{pipofast['name']} fainted!")
+            await ctx.send(f"{pipo1['name']} HP: {pipo1['hp']} {pipo2['name']} HP: {pipo2['hp']}")
+            if pipo1["name"] == pipofast["name"]:
+                pipo1, pipo2 = pipofast, piposlow
+            else:
+                pipo1, pipo2 = piposlow, pipofast
+        await ctx.send(f"----------------------------------------------------------------------------------------")
+        await ctx.send("COMBAT ENDED!")
+        if pipo1["hp"] <= 0:
+            await ctx.send(f"{pipo1['name']} fainted!")
+            await ctx.send(f"{pipo2['name']} wins!")
+            return 'pipo2', pipo1["hp"], pipo2["hp"]
+        else:
+            await ctx.send(f"{pipo2['name']} fainted!")
+            await ctx.send(f"{pipo1['name']} wins!")
+            return 'pipo1', pipo1["hp"], pipo2["hp"]
+            
+            
     
     #exp gain and gold after combat and leaderboards
     async def postgame(self, ctx, winner, loser, loser_to = False, g = 0, user_win = None, user_lose = None, leaderboards = False):

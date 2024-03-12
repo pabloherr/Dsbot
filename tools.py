@@ -74,14 +74,62 @@ async def lvlup(pipo: dict, stat1: str, stat2: str) -> dict:
 
 # Command to calculate the velocity
 async def velocity(pipo1: dict, pipo2: dict):
+    ff1 = False
+    ff2 = False
+    if pipo1["passive"] == "Fight First":
+        prob = random.randint(1, 4)
+        if prob == 1:
+            ff1 = True
+            pipo1["speed"] += 2
+        else:
+            pipo1["speed"] -= 2
+    if pipo2["passive"] == "Fight First":
+        prob = random.randint(1, 4)
+        if prob == 1:
+            ff2 = True
+            pipo2["speed"] += 2
+        else:
+            pipo2["speed"] -= 2
+        
+    
     #pipo1 faster
     if pipo1['speed'] > pipo2['speed']:
-        return pipo1
+        if pipo1["passive"] == "Fight First":
+            if ff1:
+                pipo1["speed"] -= 2
+            else:
+                pipo1["speed"] += 2
+        if pipo2["passive"] == "Fight First":
+            if ff2:
+                pipo2["speed"] -= 2
+            else:
+                pipo2["speed"] += 2
+            return pipo1
     #pipo2 faster
     elif pipo1['speed'] < pipo2['speed']:
+        if pipo1["passive"] == "Fight First":
+            if ff1:
+                pipo1["speed"] -= 2
+            else:
+                pipo1["speed"] += 2
+        if pipo2["passive"] == "Fight First":
+            if ff2:
+                pipo2["speed"] -= 2
+            else:
+                pipo2["speed"] += 2
         return pipo2
     #speed tie
     else:
+        if pipo1["passive"] == "Fight First":
+            if ff1:
+                pipo1["speed"] -= 2
+            else:
+                pipo1["speed"] += 2
+        if pipo2["passive"] == "Fight First":
+            if ff2:
+                pipo2["speed"] -= 2
+            else:
+                pipo2["speed"] += 2
         r = random.randint(0, 1)
         if r == 0:
             return pipo1
@@ -94,37 +142,24 @@ async def damage(pipoatk: dict, pipodef: dict) -> int:
     feel = False
     if pipodef['passive'] == "Feel No Pain":
         feel = True
-    if pipoatk['passive'] == "Lethal Hits":
-        lethal = 2
-    
+        ###############
+        print(pipoatk['passive'])
+        if pipoatk['passive'] == "Lethal Hits":
+            lethal = cl(pipoatk['attack']/2)
+        #########
     if pipodef['passive'] == "Invulnerable":
         inv = random.randint(0, 2)
         if inv == 0:
             return 0
         return pipoatk['attack']
     
-    if pipodef['defense'] > pipoatk['attack']+lethal:
-        dmg = cl(pipoatk['attack']/4)
-        if feel:
-            for i in range(dmg):
-                r = random.randint(1, 6)
-                if r == 6:
-                    dmg -= 1
-        return dmg
-    
-    elif pipodef['defense'] == pipoatk['attack']+lethal:
-        dmg =  cl(pipoatk['attack']/2)
-        if feel:
-            for i in range(dmg):
-                r = random.randint(0,2)
-                if r == 0:
-                    dmg -= 1
-        return dmg
     else:
-        dmg =  pipoatk['attack']
+        dmg = pipoatk['attack'] + lethal - pipodef['defense']
+        if dmg <= 0:
+            dmg = 1 + lethal
         if feel:
             for i in range(dmg):
-                r = random.randint(0,2)
+                r = random.randint(0, 2)
                 if r == 0:
                     dmg -= 1
         return dmg
