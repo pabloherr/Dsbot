@@ -47,7 +47,7 @@ class Combat(commands.Cog):
     
     #combat other user
     @commands.command(brief='Combat another user. !combat <your_pipo_name> <other_user_pipo_name> <@user>')
-    async def combat(self, ctx, pipo1: str, pipo2:str, bet = 0):
+    async def combat(self, ctx, pipo1: str, pipo2:str):
         await ctx.send(f'{ctx.message.mentions[0].name} confirm the fight with yes or no')
         def check(m):
             return m.author == ctx.message.mentions[0] and m.content.lower() in ['yes', 'no']
@@ -67,9 +67,10 @@ class Combat(commands.Cog):
         pipo1 = next((pipo for pipo in user1["pipos"] if pipo["name"] == pipo1), None)
         pipo2 = next((pipo for pipo in user2["pipos"] if pipo["name"] == pipo2), None)
         
-        if user1["gold"] < bet or user2["gold"] < bet:
-            await ctx.send("Not enough gold")
-            return
+        #if bet != None:
+        #    if user1["gold"] < bet or user2["gold"] < bet:
+        #        await ctx.send("Not enough gold")
+        #        return
         
         if pipo1 is None:
             await ctx.send("Pipo1 not found")
@@ -86,9 +87,9 @@ class Combat(commands.Cog):
         self.db["users"].update_one({"id": user2["id"]}, {"$set": user2})
         
         if winner == 'pipo1':
-            await self.postgame(winner=pipo1, loser=pipo2, loser_to=True, bet= bet, user_win= user1, user_lose= user2, leaderboards=True)
+            await self.postgame(winner=pipo1, loser=pipo2, loser_to=True, user_win= user1, user_lose= user2, leaderboards=True)
         else:
-            await self.postgame(winner=pipo2, loser=pipo1, loser_to=True,bet= bet, user_win= user2,user_lose= user1, leaderboards=True)
+            await self.postgame(winner=pipo2, loser=pipo1, loser_to=True, user_win= user2,user_lose= user1, leaderboards=True)
     
     #combat pipo vs wild pipo of the list of survivors
     @commands.command(brief='Combat a wild pipo who survive a combat. !wild_combat <your_pipo_name> <wild_pipo_name>')
@@ -320,7 +321,7 @@ class Combat(commands.Cog):
                             defender_pipo["hp"] -= dmg
                             mega_check = True
                             
-                        await ctx.send(f"   {pipo_faster['name']} it's faster!")
+                        await ctx.send(f"   {pipo_faster['name']} is faster!")
                         await ctx.send(f"   {pipo_faster['name']} deals {dmg_pipo1} damage!")
                         if not mega_check:
                             await ctx.send(f"   {mega_pipo['name']} deals {ff_mega} damage!")
@@ -342,7 +343,7 @@ class Combat(commands.Cog):
                             defender_pipo["hp"] -= dmg
                             mega_check = True
                             
-                        await ctx.send(f"   {pipo_faster['name']} it's faster!")
+                        await ctx.send(f"   {pipo_faster['name']} is faster!")
                         await ctx.send(f"   {pipo_faster['name']} deals {dmg_pipo2} damage!")
                         if not mega_check:
                             await ctx.send(f"   {mega_pipo['name']} deals {ff_mega} damage!")
@@ -365,7 +366,7 @@ class Combat(commands.Cog):
                             mega_check = True
                             
                             
-                        await ctx.send(f"   {pipo_faster['name']} it's faster!")
+                        await ctx.send(f"   {pipo_faster['name']} is faster!")
                         await ctx.send(f"   {pipo_faster['name']} deals {dmg_pipo3} damage!")
                         if not mega_check:
                             await ctx.send(f"   {mega_pipo['name']} deals {ff_mega} damage!")
@@ -456,14 +457,14 @@ class Combat(commands.Cog):
                         pipo2["hp"] -= dmg_pipo1
                         if pipo2["hp"] > 0:
                             pipo1["hp"] -= dmg_pipo2
-                        await ctx.send(f"   {pipo1['name']} it's faster!")
+                        await ctx.send(f"   {pipo1['name']} is faster!")
                         await ctx.send(f"   {pipo1['name']} deals {dmg_pipo1} damage!")
                         await ctx.send(f"   {pipo2['name']} deals {dmg_pipo2} damage!")
                     else:
                         pipo1["hp"] -= dmg_pipo2
                         if pipo1["hp"] > 0:
                             pipo2["hp"] -= dmg_pipo1
-                        await ctx.send(f"   {pipo2['name']} it's faster!")
+                        await ctx.send(f"   {pipo2['name']} is faster!")
                         await ctx.send(f"   {pipo2['name']} deals {dmg_pipo2} damage!")
                         await ctx.send(f"   {pipo1['name']} deals {dmg_pipo1} damage!")
                         
@@ -496,15 +497,13 @@ class Combat(commands.Cog):
     
     
     #exp gain and gold after combat and leaderboards
-    async def postgame(self, ctx, winner, loser, loser_to = False, bet = 0, user_win = None, user_lose = None, leaderboards = False):
+    async def postgame(self, ctx, winner, loser, loser_to = False, g = 0, user_win = None, user_lose = None, leaderboards = False):
         
         exp_gold = {1:2, 2:5, 3:8, 4:10, 5:15, 6:20, 7:32, 8:50, 9:80, 10:100, 11:150, 12:200, 13:320, 14:500, 15:800, 16:1000, 17:1500, 18:2000, 19:3200, 20:5000}
         exp = exp_gold[loser["lvl"]]
         gold = exp_gold[loser["lvl"]]
-        if bet > 0:
-            gold = bet
-            
-        
+        if g > 0:
+            gold = g
         #gold
         if not user_win == None:
             self.db["users"].update_one({"id": user_win["id"]}, {"$inc": {"gold": gold}})

@@ -19,12 +19,12 @@ class Pipos(commands.Cog):
         self.mega_pipo.cancel()
         self.all_pipos_restore.cancel()
     
-    @tasks.loop(minutes=30)
+    @tasks.loop(minutes=10)
     async def all_pipos_restore(self):
         if not self.db["time"].find_one({"id": "all_pipos_restore"}):
             self.db["time"].insert_one({"id": "all_pipos_restore", "time": datetime.datetime.now()})
         if self.db["time"].find_one({"id": "all_pipos_restore"})["time"] < datetime.datetime.now():
-            self.db["time"].update_one({"id": "all_pipos_restore"}, {"$set": {"time": datetime.datetime.now() + datetime.timedelta(hours=3)}})
+            self.db["time"].update_one({"id": "all_pipos_restore"}, {"$set": {"time": datetime.datetime.now() + datetime.timedelta(hours=1)}})
             user = self.db["users"].find()
             for u in user:
                 for pipo in u["pipos"]:

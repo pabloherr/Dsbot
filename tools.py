@@ -4,7 +4,7 @@ from models.pipo import Pipo
 from database import db_client
 
 db = db_client["discord"]
-
+channel = 1212525884070699079
 # Command to create a random pipo
 async def random_pipo( wild = False) -> Pipo:
     
