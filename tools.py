@@ -136,6 +136,39 @@ async def velocity(pipo1: dict, pipo2: dict):
         else:
             return pipo2
 
+# Command to calculate the velocity
+async def alt_velocity(pipo1: dict, pipo2: dict, pipo3:dict = None, pipo4:dict = None):
+    ff1 = random.randint(0, 3)
+    ff2 = random.randint(0, 3)
+    ff3 = random.randint(0, 3)
+    ff4 = random.randint(0, 3)
+    if pipo1["passive"] == "Fight First":
+        pipo1["speed"] += ff1
+    if pipo2["passive"] == "Fight First":
+        pipo2["speed"] += ff2
+    vel = [pipo1, pipo2]
+    if pipo3 is not None:
+        if pipo3["passive"] == "Fight First":
+            pipo3["speed"] += ff3
+        vel.append(pipo3)
+        if pipo4["passive"] == "Fight First":
+            pipo4["speed"] += ff4
+        vel.append(pipo4)
+    random.shuffle(vel)
+    vel = sorted(vel, key=lambda x: x['speed'], reverse=True)
+    if pipo1["passive"] == "Fight First":
+        pipo1["speed"] -= ff1
+    if pipo2["passive"] == "Fight First":
+        pipo2["speed"] -= ff2
+    if pipo3 is not None:
+        if pipo3["passive"] == "Fight First":
+            pipo3["speed"] -= ff3
+        if pipo4["passive"] == "Fight First":
+            pipo4["speed"] -= ff4
+    if pipo3 is None:
+        return vel[0], vel[1]
+    return vel[0], vel[1], vel[2], vel[3]
+    
 # Command to calculate the damage
 async def damage(pipoatk: dict, pipodef: dict) -> int:
     lethal = 0
@@ -147,7 +180,7 @@ async def damage(pipoatk: dict, pipodef: dict) -> int:
             lethal = cl(pipoatk['attack']/4)
         #########
     if pipodef['passive'] == "Invulnerable":
-        inv = random.randint(0, 2)
+        inv = random.randint(0, 1)
         if inv == 0:
             return 0
         return pipoatk['attack']

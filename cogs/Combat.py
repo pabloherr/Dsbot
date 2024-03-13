@@ -1,7 +1,7 @@
 import random
 from discord.ext import commands
 from database import db_client
-from tools import damage, wild, velocity
+from tools import damage, wild, velocity, alt_velocity
 from math import ceil as cl
 
 class Combat(commands.Cog):
@@ -540,12 +540,18 @@ class Combat(commands.Cog):
             await ctx.send(f"   {pipo1['name']} wins!")
             return 'pipo1', pipo1["hp"], pipo2["hp"]
     
+    
+    
+    
+    
     #alterate combat
     async def alt_fight(self, ctx, pipo1, pipo2):
         round = 0
         while pipo1["hp"] > 0 and pipo2["hp"] > 0:
             round += 1
-            pipofast = await velocity(pipo1, pipo2)
+
+            pipofast, piposlow = await alt_velocity(pipo1, pipo2)
+            
             await ctx.send(f"----------------------------------------------------------------------------------------")
             await ctx.send(f"ROUND {round}")
             if pipofast == pipo1:
@@ -588,8 +594,15 @@ class Combat(commands.Cog):
             await ctx.send(f"{pipo2['name']} fainted!")
             await ctx.send(f"{pipo1['name']} wins!")
             return 'pipo1', pipo1["hp"], pipo2["hp"]
-            
-            
+    
+    #combat 2v2
+    async def fight2v2(self, ctx, pipo1, pipo2, pipo3, pipo4):
+        round = 0
+        while (pipo1["hp"] > 0 or pipo2["hp"] > 0) and (pipo3["hp"] > 0 or pipo4["hp"] > 0):
+            round += 1
+            pass
+    
+    
     
     #exp gain and gold after combat and leaderboards
     async def postgame(self, ctx, winner, loser, loser_to = False, g = 0, user_win = None, user_lose = None, leaderboards = False):
