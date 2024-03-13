@@ -35,13 +35,15 @@ class Shop(commands.Cog):
                       aliases=['ps'])
     async def pipo_shop(self, ctx):
         await ctx.send("Welcome to the shop! Here you can buy Pipos with your gold.")
-        await ctx.send("Type !buy and de number of the pipo to buy it.")
+        await ctx.send("Type !buy and the name of the pipo to buy it.")
         await ctx.send("Here are the Pipos available: \n\n")
+        await ctx.send(f"----------------------------------------------------------------------------------------")
         await ctx.send(f"{ctx.author} you have {self.db["users"].find_one({"id": ctx.author.id})["gold"]} gold.")
         
         for i, pipo in enumerate(self.collection.find()):
-            await ctx.send(f"{i+1}. {pipo["name"]} {pipo["rarity"]} \n{pipo["hp"]} HP \n{pipo["attack"]}ATK \n{pipo["defense"]} DEF \n{pipo["speed"]} SPD \n Passive:{pipo["passive"]} \nPrice:{pipo["price"]}\n\n")
-        
+            await ctx.send(f"----------------------------------------------------------------------------------------")
+            await ctx.send(f"{i+1}. {pipo["name"]} {pipo["rarity"]} \n{pipo["hp"]} HP \n{pipo["attack"]}ATK \n{pipo["defense"]} DEF \n{pipo["speed"]} SPD \n   Passive:{pipo["passive"]} \nPrice:{pipo["price"]}\n\n")
+        await ctx.send(f"----------------------------------------------------------------------------------------")
         if self.collection.count_documents({}) == 0:
             await ctx.send("OUT OF STOCK!")
             await ctx.send("Please wait fot towmorrow to restock the shop.\n\n")

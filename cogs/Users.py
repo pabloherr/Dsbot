@@ -1,4 +1,5 @@
 import discord
+import datetime
 from discord.ext import commands
 from database import db_client
 from models.user import User
@@ -9,7 +10,7 @@ class Users(commands.Cog):
         self.client = client
         self.mongo_client = db_client
         self.db = self.mongo_client["discord"] 
-        self.collection = self.db["users"] 
+        self.collection = self.db["users"]
     
     # Command to create a new user
     @commands.command(brief='Join the game!')
