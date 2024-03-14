@@ -35,7 +35,7 @@ class Shop(commands.Cog):
                       aliases=['ps'])
     async def pipo_shop(self, ctx):
         await ctx.send("Welcome to the shop! Here you can buy Pipos with your gold.")
-        await ctx.send("Type !buy and the name of the pipo to buy it.")
+        await ctx.send("Type !buy_pipo and the name of the pipo to buy it.")
         await ctx.send("Here are the Pipos available: \n\n")
         await ctx.send(f"----------------------------------------------------------------------------------------")
         await ctx.send(f"{ctx.author} you have {self.db["users"].find_one({"id": ctx.author.id})["gold"]} gold.")
@@ -125,7 +125,7 @@ class Shop(commands.Cog):
                       alises=['is'])
     async def item_shop(self, ctx):
         await ctx.send("Welcome to the shop! Here you can buy items with your gold.")
-        await ctx.send("Type !buy and the number of the item to buy it.")
+        await ctx.send("Type !buy_item and the number of the item to buy it.")
         await ctx.send("Here are the items available: \n\n")
         
         for i, item in enumerate(self.collection2.find()):

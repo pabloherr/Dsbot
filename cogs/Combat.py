@@ -454,102 +454,13 @@ class Combat(commands.Cog):
             pipo3["hp"] = pipo3["max_hp"]
             return True, pipo1["hp"], pipo2["hp"], pipo3["hp"]
     
-    #combat pipo vs pipo
-    async def fight(self, ctx, pipo1, pipo2):
-        turn1 = 0
-        turn2 = 0
-        round = 0
-        await ctx.send(f"----------------------------------------------------------------------------------------")
-        while pipo1["hp"] > 0 and pipo2["hp"] > 0:
-            turn1 += pipo1["speed"]
-            turn2 += pipo2["speed"]
-            
-            #fight
-            if turn1 >= 12 or turn2 >= 12:
-                round +=1
-                await ctx.send(f"ROUND {round}")
-                dmg_pipo1 = await damage(pipo1, pipo2)
-                dmg_pipo2 = await damage(pipo2, pipo1)
-                ff_dmg1 = cl(pipo1["attack"]/3)
-                ff_dmg2 = cl(pipo2["attack"]/3)
-                #pipo1 attacks
-                if turn1 >= 12 and turn2 < 12:
-                    turn1 = 0
-                    pipo2["hp"] -= dmg_pipo1
-                    await ctx.send(f"   {pipo1['name']} attacks! ")
-                    await ctx.send(f"   Dealing {dmg_pipo1} damage!")
-                    
-                #pipo2 attacks
-                if turn2 >= 12 and turn1 < 12:
-                    turn2 = 0
-                    pipo1["hp"] -= dmg_pipo2
-                    await ctx.send(f"   {pipo2['name']} attacks!")
-                    await ctx.send(f"   Dealing {dmg_pipo2} damage!")
-                    
-                #FF
-                #both attack
-                if turn1 >= 12 and turn2 >= 12:
-                    if pipo1["passive"] == 'Fight First':
-                        dmg_pipo1 += ff_dmg1
-                        pipo1["speed"] += 200
-                    if pipo2["passive"] == 'Fight First':
-                        dmg_pipo2 += ff_dmg2
-                        pipo2["speed"] += 200
-                    
-                    pipo_faster = await velocity(pipo1, pipo2)
-                    
-                    if pipo_faster["name"] == pipo1["name"]:
-                        pipo2["hp"] -= dmg_pipo1
-                        if pipo2["hp"] > 0:
-                            pipo1["hp"] -= dmg_pipo2
-                        await ctx.send(f"   {pipo1['name']} is faster!")
-                        await ctx.send(f"   {pipo1['name']} deals {dmg_pipo1} damage!")
-                        await ctx.send(f"   {pipo2['name']} deals {dmg_pipo2} damage!")
-                    else:
-                        pipo1["hp"] -= dmg_pipo2
-                        if pipo1["hp"] > 0:
-                            pipo2["hp"] -= dmg_pipo1
-                        await ctx.send(f"   {pipo2['name']} is faster!")
-                        await ctx.send(f"   {pipo2['name']} deals {dmg_pipo2} damage!")
-                        await ctx.send(f"   {pipo1['name']} deals {dmg_pipo1} damage!")
-                        
-                    if pipo1["passive"] == "Fight First":
-                        dmg_pipo1 -= ff_dmg1
-                        pipo1["speed"] -= 200
-                    if pipo2["passive"] == "Fight First":
-                        dmg_pipo2 -= ff_dmg2
-                        pipo2["speed"] -= 200
-                if pipo1["hp"]<= 0:
-                    pipo1["hp"] = 0
-                    await ctx.send(f"   {pipo1['name']} fainted!")
-                if pipo2["hp"]<= 0:
-                    pipo2["hp"] = 0
-                    await ctx.send(f"   {pipo2['name']} fainted!")
-                
-                await ctx.send(f"   {pipo1['name']} HP: {pipo1['hp']} {pipo2['name']} HP: {pipo2['hp']}")
-                await ctx.send(f"----------------------------------------------------------------------------------------")
-        await ctx.send(f"----------------------------------------------------------------------------------------")
-        await ctx.send("COMBAT ENDED!")
-        if pipo1["hp"] <= 0:
-            await ctx.send(f"   {pipo1['name']} fainted!")
-            await ctx.send(f"   {pipo2['name']} wins!")
-            return 'pipo2', pipo1["hp"], pipo2["hp"]
-
-        else:
-            await ctx.send(f"   {pipo2['name']} fainted!")
-            await ctx.send(f"   {pipo1['name']} wins!")
-            return 'pipo1', pipo1["hp"], pipo2["hp"]
-    
-    
-    
-    
     
     #alterate combat
     async def alt_fight(self, ctx, pipo1, pipo2):
         round = 0
         while pipo1["hp"] > 0 and pipo2["hp"] > 0:
             round += 1
-
+            
             pipofast, piposlow = await alt_velocity(pipo1, pipo2)
             
             await ctx.send(f"----------------------------------------------------------------------------------------")
@@ -598,10 +509,80 @@ class Combat(commands.Cog):
     #combat 2v2
     async def fight2v2(self, ctx, pipo1, pipo2, pipo3, pipo4):
         round = 0
-        while (pipo1["hp"] > 0 or pipo2["hp"] > 0) and (pipo3["hp"] > 0 or pipo4["hp"] > 0):
+        if pipo1["tank"]:
+            team1_tank = pipo1
+            team1_dps = pipo2
+        elif pipo2["tank"]:
+            team1_tank = pipo2
+            team1_dps = pipo1
+        else:
+            await ctx.send("No tank in team 1")
+            return
+        if pipo3["tank"]:
+            team2_tank = pipo3
+            team2_dps = pipo4
+        elif pipo4["tank"]:
+            team2_tank = pipo4
+            team2_dps = pipo3
+        else:
+            await ctx.send("No tank in team 2")
+            return
+        
+        team1 = [team1_tank, team1_dps]
+        team2 = [team2_tank, team2_dps]
+        
+        while (team1_tank["hp"] > 0 or team1_tank["hp"] > 0) and (team2_tank["hp"] > 0 or team2_dps["hp"] > 0):
             round += 1
-            pass
-    
+            await ctx.send(f"----------------------------------------------------------------------------------------")
+            await ctx.send(f"ROUND {round}")
+            pipof1, pipof2, pipol1, pipol2 = await velocity(team1_tank, team1_dps, team2_tank, team2_dps)
+            
+            
+            async def attack(pipo):
+                if pipo["hp"]<= 0:
+                    return
+                if pipo in team1:
+                    defender = random.randint(1,4)
+                    if defender == 1:
+                        team2_dps["hp"] -= await damage(pipo, team2_dps)
+                        await ctx.send(f"{pipo['name']} attacks {team2_dps['name']}!")
+                        if team2_dps["hp"] <= 0:
+                            team2_dps["hp"] = 0
+                            await ctx.send(f"{team2_dps['name']} fainted!")
+                    else:
+                        team2_tank["hp"] -= await damage(pipo, team2_tank)
+                        await ctx.send(f"{pipo['name']} attacks {team2_tank['name']}!")
+                        if team2_tank["hp"] <= 0:
+                            team2_tank["hp"] = 0
+                            await ctx.send(f"{team2_tank['name']} fainted!")
+                else:
+                    defender = random.randint(1,4)
+                    if defender == 1:
+                        team1_dps["hp"] -= await damage(pipo, team1_dps)
+                        await ctx.send(f"{pipo['name']} attacks {team1_dps['name']}!")
+                        if team1_dps["hp"] <= 0:
+                            team1_dps["hp"] = 0
+                            await ctx.send(f"{team1_dps['name']} fainted!")
+                    else:
+                        team1_tank["hp"] -= await damage(pipo, team1_tank)
+                        await ctx.send(f"{pipo['name']} attacks {team1_tank['name']}!")
+                        if team1_tank["hp"] <= 0:
+                            team1_tank["hp"] = 0
+                            await ctx.send(f"{team1_tank['name']} fainted!")
+                            
+            await attack(pipof1)
+            await attack(pipof2)
+            await attack(pipol1)
+            await attack(pipol2)
+            await ctx.send(f"{team1_dps['name']} <- HP -> {team1_tank['hp']} || {team2_tank['name']} <- HP -> {team2_dps['hp']}")
+        await ctx.send(f"----------------------------------------------------------------------------------------")
+        await ctx.send("COMBAT ENDED!")
+        if team1_tank["hp"] <= 0 and team1_dps["hp"] <= 0:
+            await ctx.send(f"Team 2 wins!")
+            return team2_tank, team2_dps, team1_tank, team1_dps
+        else:
+            await ctx.send(f"Team 1 wins!")
+            return team1_tank, team1_dps, team2_tank, team2_dps
     
     
     #exp gain and gold after combat and leaderboards
