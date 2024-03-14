@@ -101,11 +101,11 @@ class Shop(commands.Cog):
             self.db["time"].update_one({"id": "obj_shop"}, {"$set": {"time": datetime.datetime.now() + datetime.timedelta(hours=3)}})
             self.collection2.delete_many({})
             items = ["potions", "super_potions", "hyper_potions", "max_potions", "passive_reroll", "passive_elixir"]
-            numbers = [random.randint(1, 50) for _ in range(5)]
+            numbers = [random.randint(1, 50) for _ in range(len(items)-1)]
             while sum(numbers) > 50:
-                numbers = [random.randint(1, 50) for _ in range(5)]
+                numbers = [random.randint(1, 50) for _ in range(len(items)-1)]
             numbers.append(50 - sum(numbers))
-            for i in range(5):
+            for i in range(len(items)):
                 if items[i] == "potions":
                     price = 5
                 elif items[i] == "super_potions":
