@@ -181,19 +181,18 @@ async def damage(pipoatk: dict, pipodef: dict) -> int:
         if pipoatk['passive'] == "Lethal Hits":
             lethal = cl(pipoatk['attack']/4)
         #########
+        
     if pipodef['passive'] == "Invulnerable":
-        inv = random.randint(0, 1)
+        inv = random.randint(0, 2)
         if inv == 0:
             return 0
-        return pipoatk['attack']
-    
-    else:
-        dmg = pipoatk['attack'] + lethal - pipodef['defense']
-        if dmg <= 0:
-            dmg = 1 + lethal
-        if feel:
-            for i in range(dmg):
-                r = random.randint(0, 2)
-                if r == 0:
-                    dmg -= 1
-        return dmg
+        
+    dmg = pipoatk['attack'] + lethal - pipodef['defense']
+    if dmg <= 0:
+        dmg = 1 + lethal
+    if feel:
+        for i in range(dmg):
+            r = random.randint(0, 1)
+            if r == 0:
+                dmg -= 1
+    return dmg

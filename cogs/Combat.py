@@ -199,34 +199,146 @@ class Combat(commands.Cog):
             if pipo3 is not None:
                 await self.postgame(ctx, winner= pipo3, loser = mega_pipo, user_win = user3)
     
-    
-    
-    
-    # alternate wild_combat
-        #combat wild pipo
-    @commands.command(brief='Combat a wild pipo. !wild_combat <your_pipo_name> <zone>(forest, desert, mountain)',
-                        alises=['awc'])
-    async def awc(self, ctx, pipo_name: str, zone: str):
-        user = self.db["users"].find_one({"id": ctx.author.id})
-        pipo1 = next((pipo for pipo in user["pipos"] if pipo["name"] == pipo_name), None)
-        pipo2 = await wild(zone)
-        
-        if await self.precombat(ctx, pipo1, pipo2) == "cancel":
+    #combat 2v2
+    @commands.command(brief='Combat 2 pipos vs 2 pipos. !combat2v2 <your_pipo1_name> <your_pipo2_name> <other_user_pipo1_name> <other_user_pipo2_name> <@user>',
+                        aliases=['c2v2'])
+    async def combat2v2(self, ctx, pipo1: str, pipo2: str, pipo3: str, pipo4: str):
+        user1 = self.db["users"].find_one({"id": ctx.author.id})
+        user2 = self.db["users"].find_one({"id": ctx.message.mentions[0].id})
+        pipo1 = next((pipo for pipo in user1["pipos"] if pipo["name"] == pipo1), None)
+        pipo2 = next((pipo for pipo in user1["pipos"] if pipo["name"] == pipo2), None)
+        pipo3 = next((pipo for pipo in user2["pipos"] if pipo["name"] == pipo3), None)
+        pipo4 = next((pipo for pipo in user2["pipos"] if pipo["name"] == pipo4), None)
+        if pipo1 is None:
+            await ctx.send(f"{pipo1} not found")
+            return
+        if pipo2 is None:
+            await ctx.send(f"{pipo2} not found")
+            return
+        if pipo3 is None:
+            await ctx.send(f"{pipo3} not found")
+            return
+        if pipo4 is None:
+            await ctx.send(f"{pipo4} not found")
             return
         
-        winner, pipo1["hp"], pipo2["hp"] = await self.alt_fight(ctx, pipo1, pipo2)
-        await ctx.send(f"FELI PUTO")
-        if pipo1["lvl"] < 3 and pipo1["hp"] == 0 and pipo2["lvl"] > pipo1["lvl"] and pipo2["lvl"] < 4:
-            pipo1["hp"] += int(cl(pipo1["max_hp"]/2))
-            
-        self.db["users"].update_one({"id": user["id"]}, {"$set": user})
-        if winner == 'pipo1':
-            await self.postgame(ctx, winner= pipo1, loser = pipo2, user_win = user)
-        if winner == 'pipo2':
-            if pipo1["lvl"] < 3:
-                await self.postgame(ctx, winner= pipo2, loser = pipo1, user_lose = user, loser_to=True)
-            self.db["wild_pipos"].insert_one(pipo2)
+        if pipo1["tank"]:
+            team1_tank = pipo1
+            team1_dps = pipo2
+        elif pipo2["tank"]:
+            team1_tank = pipo2
+            team1_dps = pipo1
+        else:
+            await ctx.send("No tank in team 1")
+            return
+        if pipo3["tank"]:
+            team2_tank = pipo3
+            team2_dps = pipo4
+        elif pipo4["tank"]:
+            team2_tank = pipo4
+            team2_dps = pipo3
+        else:
+            await ctx.send("No tank in team 2")
+            return
+        combat_scene = (
+        f" COMBATE 2v2 \n\n"
+        f" {pipo1}:crossed_swords: {pipo2}:shield: \n"
+        f"vs\n"
+        f" Pipo3:crossed_swords: Pipo4:shield: \n\n"
+        )
+        await ctx.send(combat_scene)
+        
+        await ctx.send(f'{ctx.message.mentions[0].name} and {ctx.author.name}, confirm the fight with yes or no')
+        
+        def check(m):
+            return m.author in [ctx.message.mentions[0], ctx.author] and m.content.lower() in ['yes', 'no']
+        
+        try:
+            msg1 = await self.client.wait_for('message', check=check, timeout=30)
+        except TimeoutError:
+            await ctx.send('Timeout')
+            return
+        if msg1.content.lower() == 'no':
+            await ctx.send('Combat canceled')
+            return
+        
+        await ctx.send(f'{msg1.author.name} accepted the fight')
+        
+        try:
+            msg2 = await self.client.wait_for('message', check=check, timeout=30)
+        except TimeoutError:
+            await ctx.send('Timeout')
+            return
+        if msg2.content.lower() == 'no':
+            await ctx.send('Combat canceled')
+            return
+        await ctx.send(f'{msg2.author.name} Confirm the fight')
+        
+        pipo_win1, pipo_win2, pipo_lose1, pipo_lose2 = await self.alt_fight(ctx, team1_tank, team1_dps, team2_tank, team2_dps)
+        
+        #if pipo_win1["name"] == pipo1["name"]:
+        #    pipo1["hp"] = pipo_win1["hp"]
+        #    pipo2["hp"] = pipo_win2["hp"]
+        #    pipo3["hp"] = pipo_lose1["hp"]
+        #    pipo4["hp"] = pipo_lose2["hp"]
+        #else:
+        #    pipo1["hp"] = pipo_lose1["hp"]
+        #    pipo2["hp"] = pipo_lose2["hp"]
+        #    pipo3["hp"] = pipo_win1["hp"]
+        #    pipo4["hp"] = pipo_win2["hp"]
+        #self.db["users"].update_one({"id": user1["id"]}, {"$set": user1})
+        #self.db["users"].update_one({"id": user2["id"]}, {"$set": user2})
+        #
     
+    #wild combat 2v2
+    @commands.command(brief='Combat 2 pipos vs 2 wild pipos. !wild_combat2v2 <your_pipo1_name> <your_pipo2_name> <zone>(forest, desert, mountain)',
+                        aliases=['wc2v2'])
+    async def wild_combat2v2(self, ctx, pipo1: str, pipo2: str, zone: str):
+        user = self.db["users"].find_one({"id": ctx.author.id})
+        pipo1 = next((pipo for pipo in user["pipos"] if pipo["name"] == pipo1), None)
+        pipo2 = next((pipo for pipo in user["pipos"] if pipo["name"] == pipo2), None)
+        pipo3 = await wild(zone)
+        pipo4 = await wild(zone)
+        if pipo1 is None:
+            await ctx.send(f"{pipo1} not found")
+            return
+        if pipo2 is None:
+            await ctx.send(f"{pipo2} not found")
+            return
+        if pipo3 is None:
+            await ctx.send(f"{pipo3} not found")
+            return
+        if pipo4 is None:
+            await ctx.send(f"{pipo4} not found")
+            return
+        
+        if pipo1["tank"]:
+            team1_tank = pipo1
+            team1_dps = pipo2
+        elif pipo2["tank"]:
+            team1_tank = pipo2
+            team1_dps = pipo1
+        else:
+            await ctx.send("No tank in team 1")
+            return
+        if pipo3["defense"] >= pipo4["defense"]:
+            pipo3["tank"] = True
+            team2_tank = pipo3
+            team2_dps = pipo4
+        else:
+            pipo4["tank"] = True
+            team2_tank = pipo4
+            team2_dps = pipo3
+        combat_scene = (
+        f" COMBATE 2v2 \n\n"
+        f" {pipo1}:crossed_swords: {pipo2}:shield: \n"
+        f"vs\n"
+        f" {pipo3}:crossed_swords: {pipo4}:shield: \n\n"
+        )
+        await ctx.send(combat_scene)
+        
+        winner, pipo1["hp"], pipo2["hp"], pipo3["hp"], pipo4["hp"] = await self.fight2v2(ctx, team1_tank, team1_dps, team2_tank, team2_dps)
+        
     
     #precombat
     async def precombat(self, ctx, pipo1, pipo2):
@@ -579,10 +691,11 @@ class Combat(commands.Cog):
         await ctx.send("COMBAT ENDED!")
         if team1_tank["hp"] <= 0 and team1_dps["hp"] <= 0:
             await ctx.send(f"Team 2 wins!")
-            return team2_tank, team2_dps, team1_tank, team1_dps
+            return "team2", team1_tank["hp"], team1_dps["hp"], team2_tank["hp"], team2_dps["hp"]
         else:
             await ctx.send(f"Team 1 wins!")
-            return team1_tank, team1_dps, team2_tank, team2_dps
+            return "team1", team1_tank["hp"], team1_dps["hp"], team2_tank["hp"], team2_dps["hp"]
+    
     
     
     #exp gain and gold after combat and leaderboards

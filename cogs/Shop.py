@@ -100,10 +100,10 @@ class Shop(commands.Cog):
         if self.db["time"].find_one({"id": "obj_shop"})["time"] < datetime.datetime.now():
             self.db["time"].update_one({"id": "obj_shop"}, {"$set": {"time": datetime.datetime.now() + datetime.timedelta(hours=3)}})
             self.collection2.delete_many({})
-            items = ["potions", "super_potions", "hyper_potions", "max_potions", "passive_reroll"]
-            numbers = [random.randint(1, 50) for _ in range(4)]
+            items = ["potions", "super_potions", "hyper_potions", "max_potions", "passive_reroll", "passive_elixir"]
+            numbers = [random.randint(1, 50) for _ in range(5)]
             while sum(numbers) > 50:
-                numbers = [random.randint(1, 50) for _ in range(4)]
+                numbers = [random.randint(1, 50) for _ in range(5)]
             numbers.append(50 - sum(numbers))
             for i in range(5):
                 if items[i] == "potions":
@@ -114,8 +114,8 @@ class Shop(commands.Cog):
                     price = 15
                 elif items[i] == "max_potions":
                     price = 30
-                elif items[i] == "xp_potion":
-                    price = 20
+                elif items[i] == "passive_elixir":
+                    price = 60
                 elif items[i] == "passive_reroll":
                     price = 100
                 self.collection2.insert_one({"name": items[i], "stock": numbers[i], "price": price})

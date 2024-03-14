@@ -148,7 +148,7 @@ class Pipos(commands.Cog):
     async def item(self, ctx, item:str, pipo_name: str):
         user = self.db["users"].find_one({"id": ctx.author.id})
         pipo = next((pipo for pipo in user["pipos"] if pipo["name"] == pipo_name), None)
-        if item not in ["potions", "super_potions", "hyper_potions", "max_potions", "passive_reroll"]:
+        if item not in ["potions", "super_potions", "hyper_potions", "max_potions", "passive_reroll", "passive_elixir"]:
             await ctx.send("Invalid item")
             return
         
@@ -191,10 +191,25 @@ class Pipos(commands.Cog):
             
         elif item == "passive_reroll":
             passives = ["None", "Invulnerable","Feel No Pain", "Lethal Hits", "Fight First"]
-            pipo["passive"] = random.choice(passives)
+            r = random.choice(passives)
+            while r == pipo["passive"]:
+                r = random.choice(passives)
+            pipo["passive"] = r
             user["items"]["passive_reroll"] -= 1
             self.db["users"].update_one({"id": ctx.author.id}, {"$set": user})
             await ctx.send("Passive rerolled")
+            await ctx.send(f"New passive: {pipo['passive']}")
+        
+        elif item == "passive_elixir":
+            passives = ["Invulnerable","Feel No Pain", "Lethal Hits", "Fight First"]
+            if not pipo["passive"] == "None":
+                await ctx.send("Pipo already have a passive")
+                return
+            r = random.choice(passives)
+            pipo["passive"] = r
+            user["items"]["passive_elixir"] -= 1
+            self.db["users"].update_one({"id": ctx.author.id}, {"$set": user})
+            await ctx.send("Passive elixir used")
             await ctx.send(f"New passive: {pipo['passive']}")
 
     #command to reduce pipo speed
