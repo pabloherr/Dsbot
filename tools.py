@@ -43,15 +43,17 @@ async def wild(zone: str = "forest") -> dict:
     if zone == "mountain":
         lvl = random.randint(6, 9)
     if zone == "megaforest":
-        lvl = 9
+        lvl = 15
     if zone == "megadesert":
-        lvl = 19
+        lvl = 25
     if zone == "megamountain":
-        lvl = 29
+        lvl = 35
     
     for i in range(lvl):
         stat1 = random.choice(["hp", "attack", "defense", "speed"])
         stat2 = random.choice(["hp", "attack", "defense", "speed"])
+        while stat2 == stat1:
+            stat2 = random.choice(["hp", "attack", "defense", "speed"])
         pipo = await lvlup(pipo, stat1, stat2)
     return pipo
 
