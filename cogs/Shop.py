@@ -151,7 +151,10 @@ class Shop(commands.Cog):
             return
         
         user["gold"] -= item["price"]
+        if item["name"] not in user["items"]:
+            user["items"][item["name"]] = 0
         user["items"][item["name"]] += 1
+        
         self.db["users"].update_one({"id": ctx.author.id}, {"$set": user})
         self.collection2.update_one({"name": item_name}, {"$set": {"stock": item["stock"] - 1}})
         
