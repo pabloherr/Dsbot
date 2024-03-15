@@ -42,7 +42,7 @@ class Shop(commands.Cog):
         
         for i, pipo in enumerate(self.collection.find()):
             await ctx.send(f"----------------------------------------------------------------------------------------")
-            await ctx.send(f"{i+1}. {pipo["name"]} {pipo["rarity"]} \n{pipo["hp"]} HP \n{pipo["attack"]}ATK \n{pipo["defense"]} DEF \n{pipo["speed"]} SPD \n   Passive:{pipo["passive"]} \nPrice:{pipo["price"]}\n\n")
+            await ctx.send(f"{i+1}. {pipo["name"]}  ({pipo["rarity"]}) \n{pipo["hp"]} HP \n{pipo["attack"]} ATK \n{pipo["defense"]} DEF\n{pipo["speed"]} SPD \nPassive:{pipo["passive"]} \nPrice:{pipo["price"]}\n\n")
         await ctx.send(f"----------------------------------------------------------------------------------------")
         if self.collection.count_documents({}) == 0:
             await ctx.send("OUT OF STOCK!")

@@ -177,12 +177,13 @@ async def damage(pipoatk: dict, pipodef: dict) -> int:
     feel = False
     if pipodef['passive'] == "Feel No Pain":
         feel = True
-        ###############
-        if pipoatk['passive'] == "Lethal Hits":
-            r = random.choice([0,1/2,1/4])
-            lethal = cl(pipoatk['attack'] * r)
-            print (lethal)
-        #########
+    ###############
+    if pipoatk['passive'] == "Lethal Hits":
+        r = random.choice([0,1/2,1/4])
+        lethal = cl(pipoatk['attack'] * r)
+        if r == 0:
+            lethal = 0
+    #########
         
     if pipodef['passive'] == "Invulnerable":
         inv = random.randint(0, 2)
