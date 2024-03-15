@@ -1,5 +1,6 @@
 import random
 from math import ceil as cl
+from math import floor as fl
 from models.pipo import Pipo
 from database import db_client
 
@@ -190,7 +191,7 @@ async def damage(pipoatk: dict, pipodef: dict) -> int:
         if inv == 0:
             return 0
         
-    dmg = pipoatk['attack'] + lethal - pipodef['defense']
+    dmg = pipoatk['attack'] + lethal - fl(pipodef['defense']*0.75)
     if dmg <= 0:
         dmg = 1 + lethal
     if feel:
