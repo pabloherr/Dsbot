@@ -186,7 +186,7 @@ class Pipos(commands.Cog):
             await ctx.send("Max potions used")
             
         elif item == "passive_reroll":
-            passives = ["None", "Invulnerable","Feel No Pain", "Lethal Hits", "Fight First"]
+            passives = ["Invulnerable","Feel No Pain", "Lethal Hits", "Fight First"]
             r = random.choice(passives)
             while r == pipo["passive"]:
                 r = random.choice(passives)
@@ -209,17 +209,17 @@ class Pipos(commands.Cog):
             await ctx.send(f"New passive: {pipo['passive']}")
 
     #command to reduce pipo speed
-    @commands.command(brief='Reduce a pipo speed. !slow <pipo_name>',
-                      aliases=['sl'])
-    async def slow(self, ctx, pipo_name: str):
-        user = self.db["users"].find_one({"id": ctx.author.id})
-        pipo = next((pipo for pipo in user["pipos"] if pipo["name"] == pipo_name), None)
-        if pipo is None:
-            await ctx.send("Pipo not found")
-            return
-        pipo["speed"] -= 2
-        self.db["users"].update_one({"id": ctx.author.id}, {"$set": user})
-        await ctx.send(f"{pipo_name} speed reduced by 10")
+    #@commands.command(brief='Reduce a pipo speed. !slow <pipo_name>',
+    #                  aliases=['sl'])
+    #async def slow(self, ctx, pipo_name: str):
+    #    user = self.db["users"].find_one({"id": ctx.author.id})
+    #    pipo = next((pipo for pipo in user["pipos"] if pipo["name"] == pipo_name), None)
+    #    if pipo is None:
+    #        await ctx.send("Pipo not found")
+    #        return
+    #    pipo["speed"] -= 2
+    #    self.db["users"].update_one({"id": ctx.author.id}, {"$set": user})
+    #    await ctx.send(f"{pipo_name} speed reduced by 10")
 
 async def setup(client):
     await client.add_cog(Pipos(client))

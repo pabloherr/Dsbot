@@ -113,5 +113,15 @@ class Users(commands.Cog):
         self.collection.update_one({"id": ctx.author.id}, {"$set": user})
         await ctx.send(f"{pipo_name} set as defender")
 
+
+    #give gold
+    #@commands.command(brief='Give gold to another user.',
+    #                  aliases=['gg'])
+    #async def give_gold(self, ctx, amount: int):
+    #    user = self.collection.find_one({"id": ctx.author.id})
+    #    user["gold"] += amount
+    #    user = self.collection.update_one({"id": ctx.author.id}, {"$set": user})
+    #    await ctx.send(f"{amount} gold given to {ctx.author.name}")
+
 async def setup(client):
     await client.add_cog(Users(client))

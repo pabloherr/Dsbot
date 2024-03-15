@@ -44,8 +44,10 @@ class Combat(commands.Cog):
             return
         
         winner, pipo1["hp"], pipo2["hp"] = await self.alt_fight(ctx, pipo1, pipo2)
+        
         if pipo1["lvl"] < 3 and pipo1["hp"] == 0 and pipo2["lvl"] > pipo1["lvl"] and pipo2["lvl"] < 4:
             pipo1["hp"] += int(cl(pipo1["max_hp"]/2))
+        
         self.db["users"].update_one({"id": user["id"]}, {"$set": user})
         if winner == 'pipo1':
             await self.postgame(ctx, winner= pipo1, loser = pipo2, user_win = user)
