@@ -338,7 +338,10 @@ class Combat(commands.Cog):
         await ctx.send(combat_scene)
         
         winner, pipo1["hp"], pipo2["hp"], pipo3["hp"], pipo4["hp"] = await self.fight2v2(ctx, team1_tank, team1_dps, team2_tank, team2_dps)
-        
+        self.db["users"].update_one({"id": user["id"]}, {"$set": user})
+        if winner == 'team1':
+            await self.postgame(ctx, winner=pipo1, loser=pipo3, user_win= user)
+            await self.postgame(ctx, winner=pipo2, loser=pipo4, user_win= user)
     
     #precombat
     async def precombat(self, ctx, pipo1, pipo2):
@@ -638,8 +641,10 @@ class Combat(commands.Cog):
         
         team1 = [team1_tank, team1_dps]
         team2 = [team2_tank, team2_dps]
+        team1_total_hp = int(team1_tank["hp"] + team1_dps["hp"])
+        team2_total_hp = int(team2_tank["hp"] + team2_dps["hp"])
         
-        while (team1_tank["hp"] > 0 or team1_tank["hp"] > 0) and (team2_tank["hp"] > 0 or team2_dps["hp"] > 0):
+        while team1_total_hp > 0 and team2_total_hp > 0:
             round += 1
             await ctx.send(f"----------------------------------------------------------------------------------------")
             await ctx.send(f"ROUND {round}")
@@ -701,7 +706,9 @@ class Combat(commands.Cog):
                 await attack(pipol1)
             if pipol2["hp"] > 0:
                 await attack(pipol2)
-            await ctx.send(f"{team1_dps['name']}:crossed_swords:: {team1_dps["hp"]} <- HP -> {team1_tank['hp']} :{team1_tank["name"]}:shield:   ||  {team2_tank['name']}:shield:: {team2_tank['hp']}<- HP -> {team2_dps['hp']} :{team2_dps['name']}:crossed_swords:")
+            team1_total_hp = int(team1_tank["hp"] + team1_dps["hp"])
+            team2_total_hp = int(team2_tank["hp"] + team2_dps["hp"])
+            await ctx.send(f"{team1_dps['name']}:bow_and_arrow:: {team1_dps["hp"]} <- HP -> {team1_tank['hp']} :{team1_tank["name"]}:shield:   ||  :shield:{team2_tank['name']}: {team2_tank['hp']}<- HP -> {team2_dps['hp']} ::bow_and_arrow:{team2_dps['name']}")
         await ctx.send(f"----------------------------------------------------------------------------------------")
         await ctx.send("COMBAT ENDED!")
         if team1_tank["hp"] <= 0 and team1_dps["hp"] <= 0:

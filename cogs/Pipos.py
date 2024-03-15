@@ -156,35 +156,31 @@ class Pipos(commands.Cog):
             await ctx.send("No items")
             return
         if item == "potions":
-            for pipo in user["pipos"]:
-                pipo["hp"] += random.randint(3, 5)
-                if pipo["hp"] > pipo["max_hp"]:
-                    pipo["hp"] = pipo["max_hp"]
+            pipo["hp"] += random.randint(3, 5)
+            if pipo["hp"] > pipo["max_hp"]:
+                pipo["hp"] = pipo["max_hp"]
             user["items"]["potions"] -= 1
             self.db["users"].update_one({"id": ctx.author.id}, {"$set": user})
             await ctx.send("Potions used")
         
         elif item == "super_potions":
-            for pipo in user["pipos"]:
-                pipo["hp"] += random.randint(6, 10)
-                if pipo["hp"] > pipo["max_hp"]:
-                    pipo["hp"] = pipo["max_hp"]
+            pipo["hp"] += random.randint(6, 10)
+            if pipo["hp"] > pipo["max_hp"]:
+                pipo["hp"] = pipo["max_hp"]
             user["items"]["super_potions"] -= 1
             self.db["users"].update_one({"id": ctx.author.id}, {"$set": user})
             await ctx.send("Super potions used")
         
         elif item == "hyper_potions":
-            for pipo in user["pipos"]:
-                pipo["hp"] += random.randint(11, 20)
-                if pipo["hp"] > pipo["max_hp"]:
-                    pipo["hp"] = pipo["max_hp"]
+            pipo["hp"] += random.randint(11, 20)
+            if pipo["hp"] > pipo["max_hp"]:
+                pipo["hp"] = pipo["max_hp"]
             user["items"]["hyper_potions"] -= 1
             self.db["users"].update_one({"id": ctx.author.id}, {"$set": user})
             await ctx.send("Hyper potions used")
         
         elif item == "max_potions":
-            for pipo in user["pipos"]:
-                pipo["hp"] = pipo["max_hp"]
+            pipo["hp"] = pipo["max_hp"]
             user["items"]["max_potions"] -= 1
             self.db["users"].update_one({"id": ctx.author.id}, {"$set": user})
             await ctx.send("Max potions used")

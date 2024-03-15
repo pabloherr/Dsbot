@@ -137,8 +137,11 @@ class Shop(commands.Cog):
     # Buy an item
     @commands.command(brief='Buy an item from the shop. !buy_item <item_name>',
                       aliases=['bi'])
-    async def buy_item(self, ctx, item_name: str):
+    async def buy_item(self, ctx, item_name: str, amount: int = 1):
         item = self.collection2.find_one({"name": item_name})
+        if amount > self.collection2.find_one({"name": item_name})["stock"]:
+            await ctx.send("Not enough stock")
+            return
         
         if item is None:
             await ctx.send("Item not found")
@@ -146,17 +149,17 @@ class Shop(commands.Cog):
         
         user = self.db["users"].find_one({"id": ctx.author.id})
         
-        if user["gold"] < item["price"]:
+        if user["gold"] < item["price"]*amount:
             await ctx.send("Not enough gold")
             return
         
-        user["gold"] -= item["price"]
+        user["gold"] -= item["price"]*amount
         if item["name"] not in user["items"]:
             user["items"][item["name"]] = 0
-        user["items"][item["name"]] += 1
+        user["items"][item["name"]] += amount
         
         self.db["users"].update_one({"id": ctx.author.id}, {"$set": user})
-        self.collection2.update_one({"name": item_name}, {"$set": {"stock": item["stock"] - 1}})
+        self.collection2.update_one({"name": item_name}, {"$set": {"stock": item["stock"] - amount}})
         
         await ctx.send(f"{item["name"]} bought!")
     
