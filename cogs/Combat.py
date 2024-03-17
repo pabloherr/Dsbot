@@ -579,7 +579,7 @@ class Combat(commands.Cog):
                         mega_pipo["speed"] += 200
                         
                         
-                    pipo_faster = await velocity(pipo, mega_pipo)
+                    pipo_faster = await alt_velocity(pipo, mega_pipo)
                     
                     
                     if pipo_faster["name"] == pipo1["name"]:
