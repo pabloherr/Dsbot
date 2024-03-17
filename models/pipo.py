@@ -14,4 +14,4 @@ class Pipo(BaseModel):
     passive: str
     lvl: int = 1
     exp: int = 0
-    
+    item: str = None

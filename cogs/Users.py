@@ -47,9 +47,18 @@ class Users(commands.Cog):
         else:
             defender = user['defender']['name']
         await ctx.send(f"User: {user["name"]} \nGold: {user['gold']} \nDefender: {defender} \nPipos: {len(user['pipos'])}")
+        
+    # Command to show the user's items
+    @commands.command(brief='Show your items.',
+                        aliases=['bp'])
+    async def backpack(self, ctx):
+        user = self.collection.find_one({"id": ctx.author.id})
+        if user is None:
+            await ctx.send('User does not exist!')
+            return
         await ctx.send("ITEMS:")
-        for item in user['items']:
-            await ctx.send(f"{item}: {user['items'][item]}")
+        for item in user['backpack']:
+            await ctx.send(f"{item}: {user['backpack'][item]}")
     
     # Command to show the user's pipos
     @commands.command(brief='Show your pipos.',

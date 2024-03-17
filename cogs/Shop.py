@@ -7,28 +7,10 @@ from tools import random_pipo
 class Shop(commands.Cog):
     def __init__(self, client):
         self.client = client
-        self.daily_pipo_shop.start()
-        self.daily_obj_shop.start()
         self.mongo_client = db_client
         self.db = self.mongo_client["discord"] 
         self.collection = self.db["pipo_shop"]
         self.collection2 = self.db["obj_shop"]
-    
-    def cog_unload(self):     
-        self.daily_pipo_shop.cancel()
-        self.daily_obj_shop.cancel()
-    
-    # Restock the shop every 24 hours
-    @tasks.loop(hours=1)
-    async def daily_pipo_shop(self):
-        if not self.db["time"].find_one({"id": "shop"}):
-            self.db["time"].insert_one({"id": "shop", "time": datetime.datetime.now()})
-        if self.db["time"].find_one({"id": "shop"})["time"] < datetime.datetime.now():
-            self.db["time"].update_one({"id": "shop"}, {"$set": {"time": datetime.datetime.now() + datetime.timedelta(hours=24)}})
-            self.collection.delete_many({})
-            for i in range(6):
-                pipo = await random_pipo()
-                self.collection.insert_one(pipo)
     
     # Show the shop
     @commands.command(brief='Show the shop where you can buy Pipos.',
@@ -91,34 +73,6 @@ class Shop(commands.Cog):
         user["gold"] -= 50
         await ctx.send("Shop restocked!")
         await self.shop(ctx)
-
-    # Restock the shop every 24 hours
-    @tasks.loop(minutes=10)
-    async def daily_obj_shop(self):
-        if not self.db["time"].find_one({"id": "obj_shop"}):
-            self.db["time"].insert_one({"id": "obj_shop", "time": datetime.datetime.now()})
-        if self.db["time"].find_one({"id": "obj_shop"})["time"] < datetime.datetime.now():
-            self.db["time"].update_one({"id": "obj_shop"}, {"$set": {"time": datetime.datetime.now() + datetime.timedelta(hours=3)}})
-            self.collection2.delete_many({})
-            items = ["potions", "super_potions", "hyper_potions", "max_potions", "passive_reroll", "passive_elixir"]
-            numbers = [random.randint(1, 50) for _ in range(len(items)-1)]
-            while sum(numbers) > 50:
-                numbers = [random.randint(1, 50) for _ in range(len(items)-1)]
-            numbers.append(50 - sum(numbers))
-            for i in range(len(items)):
-                if items[i] == "potions":
-                    price = 5
-                elif items[i] == "super_potions":
-                    price = 10
-                elif items[i] == "hyper_potions":
-                    price = 15
-                elif items[i] == "max_potions":
-                    price = 30
-                elif items[i] == "passive_elixir":
-                    price = 60
-                elif items[i] == "passive_reroll":
-                    price = 100
-                self.collection2.insert_one({"name": items[i], "stock": numbers[i], "price": price})
     
     # Show the items shop
     @commands.command(brief='Show the shop where you can buy items.',
@@ -156,7 +110,7 @@ class Shop(commands.Cog):
         user["gold"] -= item["price"]*amount
         if item["name"] not in user["items"]:
             user["items"][item["name"]] = 0
-        user["items"][item["name"]] += amount
+        user["backpack"][item["name"]] += amount
         
         self.db["users"].update_one({"id": ctx.author.id}, {"$set": user})
         self.collection2.update_one({"name": item_name}, {"$set": {"stock": item["stock"] - amount}})

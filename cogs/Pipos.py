@@ -12,34 +12,7 @@ class Pipos(commands.Cog):
         self.db = self.mongo_client["discord"]
         self.collection = self.db["wild_pipos"]
         self.collection2 = self.db["mega_pipos"]
-        self.mega_pipo.start()
-        self.all_pipos_restore.start()
-        self.wild_restore.start()
     
-    def cog_unload(self):
-        self.mega_pipo.cancel()
-        self.all_pipos_restore.cancel()
-        self.wild_restore.cancel()
-    
-    @tasks.loop(minutes=1)
-    async def wild_restore(self):
-        if not self.db["time"].find_one({"id": "wild_restore"}):
-            self.db["time"].insert_one({"id": "wild_restore", "time": datetime.datetime.now()})
-        if self.db["time"].find_one({"id": "wild_restore"})["time"] < datetime.datetime.now():
-            self.db["time"].update_one({"id": "wild_restore"}, {"$set": {"time": datetime.datetime.now() + datetime.timedelta(minutes=10)}})
-            self.collection.delete_many({})
-    
-    @tasks.loop(minutes=10)
-    async def all_pipos_restore(self):
-        if not self.db["time"].find_one({"id": "all_pipos_restore"}):
-            self.db["time"].insert_one({"id": "all_pipos_restore", "time": datetime.datetime.now()})
-        if self.db["time"].find_one({"id": "all_pipos_restore"})["time"] < datetime.datetime.now():
-            self.db["time"].update_one({"id": "all_pipos_restore"}, {"$set": {"time": datetime.datetime.now() + datetime.timedelta(hours=1)}})
-            user = self.db["users"].find()
-            for u in user:
-                for pipo in u["pipos"]:
-                    pipo["hp"] = pipo["max_hp"]
-                    self.db["users"].update_one({"id": u["id"]}, {"$set": {"pipos": u["pipos"]}})
     
     # Rename the pipos
     @commands.command(brief='Rename a Pipo. !rename <pipo_name> <new_name>',
@@ -59,10 +32,25 @@ class Pipos(commands.Cog):
                       description='Stat1 and stat2 are the stats to lvl up. The stats can be hp, attack, defense or speed. The stats must be different. If the stat is hp the hp will raise by 2',
                       aliases=['lu'])
     async def levelup(self, ctx, pipo_name: str, stat1, stat2):
+        if stat1 == "HP":
+            stat1 = "hp"
+        if stat1 == "ATK":
+            stat1 = "attack"
+        if stat1 == "DEF":
+            stat1 = "defense"
+        if stat1 == "SPD":
+            stat1 = "speed"
+        if stat2 == "HP":
+            stat2 = "hp"
+        if stat2 == "ATK":
+            stat2 = "attack"
+        if stat2 == "DEF":
+            stat2 = "defense"
+        if stat2 == "SPD":
+            stat2 = "speed"
         
         lvl = {1:0, 2:10, 3:40, 4:80, 5:160, 6:320, 7:640, 8:1280, 9:2560, 10:5120}
             #  2:5  5:8   8:10  10:16  15:22 20:32   32:40 50:52    80:64   100
-        
         
         user = self.db["users"].find_one({"id": ctx.author.id})
         pipos = self.db["users"].find_one({"id": ctx.author.id})["pipos"]
@@ -125,21 +113,6 @@ class Pipos(commands.Cog):
         for pipo in pipos:
             await ctx.send(f"{pipo['name']} \n{pipo['rarity']} \nLvl: {pipo['lvl']}")
     
-    # Weekly wild mega pipo
-    @tasks.loop(hours=1)
-    async def mega_pipo(self):
-        if not self.db["time"].find_one({"id": "mega_pipo"}):
-            self.db["time"].insert_one({"id": "mega_pipo", "time": datetime.datetime.now()})
-        if self.db["time"].find_one({"id": "mega_pipo"})["time"] < datetime.datetime.now():
-            self.db["time"].update_one({"id": "mega_pipo"}, {"$set": {"time": datetime.datetime.now() + datetime.timedelta(hours=168)}})
-            if  self.collection2.count_documents({}) > 0:
-                self.collection2.delete_many({})
-            mega_zone = ["megaforest", "megadesert", "megamountain"] 
-            for zone in mega_zone:
-                pipo = await wild(zone)
-                self.collection2.insert_one(pipo)
-                self.collection2.update_one({"name": pipo["name"]}, {"$set": {"name": f"Mega {pipo['name']}"}})
-    
     
     # Command to use items
     @commands.command(brief='Use an item. !item <item> <pipo_name>',
@@ -148,11 +121,12 @@ class Pipos(commands.Cog):
     async def item(self, ctx, item:str, pipo_name: str):
         user = self.db["users"].find_one({"id": ctx.author.id})
         pipo = next((pipo for pipo in user["pipos"] if pipo["name"] == pipo_name), None)
-        if item not in ["potions", "super_potions", "hyper_potions", "max_potions", "passive_reroll", "passive_elixir"]:
+        backpack = user["backpack"]
+        if item not in backpack:
             await ctx.send("Invalid item")
             return
         
-        if user["items"][item] == 0:
+        if user["backpack"][item] == 0:
             await ctx.send("No items")
             return
         if item == "potions":
@@ -167,7 +141,7 @@ class Pipos(commands.Cog):
             pipo["hp"] += random.randint(6, 10)
             if pipo["hp"] > pipo["max_hp"]:
                 pipo["hp"] = pipo["max_hp"]
-            user["items"]["super_potions"] -= 1
+            user["backpack"]["super_potions"] -= 1
             self.db["users"].update_one({"id": ctx.author.id}, {"$set": user})
             await ctx.send("Super potions used")
         
@@ -175,13 +149,13 @@ class Pipos(commands.Cog):
             pipo["hp"] += random.randint(11, 20)
             if pipo["hp"] > pipo["max_hp"]:
                 pipo["hp"] = pipo["max_hp"]
-            user["items"]["hyper_potions"] -= 1
+            user["backpack"]["hyper_potions"] -= 1
             self.db["users"].update_one({"id": ctx.author.id}, {"$set": user})
             await ctx.send("Hyper potions used")
         
         elif item == "max_potions":
             pipo["hp"] = pipo["max_hp"]
-            user["items"]["max_potions"] -= 1
+            user["backpack"]["max_potions"] -= 1
             self.db["users"].update_one({"id": ctx.author.id}, {"$set": user})
             await ctx.send("Max potions used")
             
@@ -191,7 +165,7 @@ class Pipos(commands.Cog):
             while r == pipo["passive"]:
                 r = random.choice(passives)
             pipo["passive"] = r
-            user["items"]["passive_reroll"] -= 1
+            user["backpack"]["passive_reroll"] -= 1
             self.db["users"].update_one({"id": ctx.author.id}, {"$set": user})
             await ctx.send("Passive rerolled")
             await ctx.send(f"New passive: {pipo['passive']}")
@@ -203,10 +177,14 @@ class Pipos(commands.Cog):
                 return
             r = random.choice(passives)
             pipo["passive"] = r
-            user["items"]["passive_elixir"] -= 1
+            user["backpack"]["passive_elixir"] -= 1
             self.db["users"].update_one({"id": ctx.author.id}, {"$set": user})
             await ctx.send("Passive elixir used")
             await ctx.send(f"New passive: {pipo['passive']}")
+        
+        if user["backpack"][item] == 0:
+            del user["backpack"][item]
+            self.db["users"].update_one({"id": ctx.author.id}, {"$set": user})
 
     #command to reduce pipo speed
     #@commands.command(brief='Reduce a pipo speed. !slow <pipo_name>',
