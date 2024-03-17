@@ -50,7 +50,7 @@ class Users(commands.Cog):
         
     # Command to show the user's items
     @commands.command(brief='Show your items.',
-                        aliases=['bp'])
+                        aliases=['bag'])
     async def backpack(self, ctx):
         user = self.collection.find_one({"id": ctx.author.id})
         if user is None:

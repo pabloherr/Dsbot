@@ -72,7 +72,7 @@ class Shop(commands.Cog):
         user = self.db["users"].find_one({"id": ctx.author.id})
         user["gold"] -= 50
         await ctx.send("Shop restocked!")
-        await self.shop(ctx)
+        await self.pipo_shop(ctx)
     
     # Show the items shop
     @commands.command(brief='Show the shop where you can buy items.',

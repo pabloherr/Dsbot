@@ -2,7 +2,7 @@ import datetime
 import random
 from discord.ext import commands, tasks
 from database import db_client
-from tools import random_pipo
+from tools import random_pipo, wild
 
 class Times(commands.Cog):
     def __init__(self, client):
@@ -92,13 +92,13 @@ class Times(commands.Cog):
             self.db["time"].insert_one({"id": "mega_pipo", "time": datetime.datetime.now()})
         if self.db["time"].find_one({"id": "mega_pipo"})["time"] < datetime.datetime.now():
             self.db["time"].update_one({"id": "mega_pipo"}, {"$set": {"time": datetime.datetime.now() + datetime.timedelta(hours=168)}})
-            if  self.collection2.count_documents({}) > 0:
-                self.collection2.delete_many({})
+            if  self.db["mega_pipos"].count_documents({}) > 0:
+                self.db["mega_pipos"].delete_many({})
             mega_zone = ["megaforest", "megadesert", "megamountain"] 
             for zone in mega_zone:
                 pipo = await wild(zone)
-                self.collection2.insert_one(pipo)
-                self.collection2.update_one({"name": pipo["name"]}, {"$set": {"name": f"Mega {pipo['name']}"}})
+                self.db["mega_pipos"].insert_one(pipo)
+                self.db["mega_pipos"].update_one({"name": pipo["name"]}, {"$set": {"name": f"Mega {pipo['name']}"}})
     
 
 
