@@ -15,3 +15,4 @@ class Pipo(BaseModel):
     lvl: int = 1
     exp: int = 0
     item: str = None
+    in_fight: bool = False
