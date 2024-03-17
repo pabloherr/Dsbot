@@ -701,9 +701,17 @@ class Combat(commands.Cog):
             if poison_1 > 0:
                 pipo1["hp"] -= poison_1
                 await ctx.send(f"{pipo1['name']} takes {poison_1} damage!")
+            if pipo1["hp"] <= 0:
+                pipo1["hp"] = 0
+                await ctx.send(f"{pipo1['name']} fainted!")
+                break
             if poison_2 > 0:
                 pipo2["hp"] -= poison_2
                 await ctx.send(f"{pipo2['name']} takes {poison_2} damage!")
+            if pipo2["hp"] <= 0:
+                pipo2["hp"] = 0
+                await ctx.send(f"{pipo2['name']} fainted!")
+                break
             
             #Berserk
             pipo1["attack"] = atk_1
@@ -742,7 +750,7 @@ class Combat(commands.Cog):
             
             # Rapid Metabolism
             async def rapid_metabolism(pipo):
-                if random.randint(1, 4) ==1:
+                if random.randint(1, 4) == 1:
                     stat = random.choice(["attack", "defense", "speed"])
                     pipo[stat] += 1
                     await ctx.send(f"{pipo['name']} activates Rapid Metabolism!")
@@ -766,7 +774,7 @@ class Combat(commands.Cog):
             async def attack(pipoatk, pipodef):
                 dmg  = await damage(pipoatk, pipodef)
                 # Parry
-                if pipodef["passive"] == "Parry" and random.randint(1, 5) ==1:
+                if pipodef["passive"] == "Parry" and random.randint(1, 5) == 1:
                     dmg = cl(dmg/2)
                     await ctx.send(f"{pipodef['name']} parries the attack!")
                 
@@ -842,6 +850,7 @@ class Combat(commands.Cog):
     #combat 2v2
     async def fight2v2(self, ctx, pipo1, pipo2, pipo3, pipo4):
         round = 0
+        # Defining tanks and dps
         if pipo1["tank"]:
             team1_tank = pipo1
             team1_dps = pipo2
@@ -860,19 +869,122 @@ class Combat(commands.Cog):
         else:
             await ctx.send("No tank in team 2")
             return
-        
+        # Team
         team1 = [team1_tank, team1_dps]
         team2 = [team2_tank, team2_dps]
         team1_total_hp = int(team1_tank["hp"] + team1_dps["hp"])
         team2_total_hp = int(team2_tank["hp"] + team2_dps["hp"])
         
+        passive_t1_dps = team1_dps["passive"]
+        passive_t1_tank = team1_tank["passive"]
+        passive_t2_dps = team2_dps["passive"]
+        passive_t2_tank = team2_tank["passive"]
+        
+        atk_t1_dps = team1_dps["attack"]
+        atk_t1_tank = team1_tank["attack"]
+        atk_t2_dps = team2_dps["attack"]
+        atk_t2_tank = team2_tank["attack"]
+        
         while team1_total_hp > 0 and team2_total_hp > 0:
             round += 1
-            await ctx.send(f"----------------------------------------------------------------------------------------")
-            await ctx.send(f"ROUND {round}")
+            
+            # Poisoneous Skin
+            poison_t1_dps = 0
+            poison_t1_tank = 0
+            poison_t2_dps = 0
+            poison_t2_tank = 0
+            async def poison_dmg(pipo, poison):
+                if poison > 0:
+                    pipo["hp"] -= poison
+                    await ctx.send(f"{pipo['name']} takes {poison} damage!")
+                if pipo["hp"] <= 0:
+                    pipo["hp"] = 0
+                    await ctx.send(f"{pipo['name']} fainted from poison!")
+                return pipo["hp"]
+            team1_dps["hp"] = await poison_dmg(team1_dps, poison_t1_dps)
+            team1_tank["hp"] = await poison_dmg(team1_tank, poison_t1_tank)
+            team2_dps["hp"] = await poison_dmg(team2_dps, poison_t2_dps)
+            team2_tank["hp"] = await poison_dmg(team2_tank, poison_t2_tank)
+            if team1_dps["hp"] <= 0 and team1_tank["hp"] <= 0:
+                break
+            if team2_dps["hp"] <= 0 and team2_tank["hp"] <= 0:
+                break
+            
+            #Berserk
+            team1_dps["attack"] = atk_t1_dps
+            team1_tank["attack"] = atk_t1_tank
+            team2_dps["attack"] = atk_t2_dps
+            team2_tank["attack"] = atk_t2_tank
+            async def berserk(pipo):
+                if pipo["hp"] < pipo["max_hp"] and pipo["hp"] >= pipo["max_hp"]/2:
+                    pipo["attack"] += cl(pipo["attack"]/4)
+                    await ctx.send(f"{pipo['name']} is in the first state Berserk mode!")
+                if pipo["hp"] < pipo["max_hp"]/2:
+                    pipo["attack"] += cl(pipo["attack"]/2)
+                    await ctx.send(f"{pipo['name']} is full in Berserk mode!")
+                
+            if team1_dps["passive"] == "Berserk":
+                await berserk(team1_dps)
+            if team1_tank["passive"] == "Berserk":
+                await berserk(team1_tank)
+            if team2_dps["passive"] == "Berserk":
+                await berserk(team2_dps)
+            if team2_tank["passive"] == "Berserk":
+                await berserk(team2_tank)
+            
+            # Void
+            team1_dps["passive"] = passive_t1_dps
+            team1_tank["passive"] = passive_t1_tank
+            team2_dps["passive"] = passive_t2_dps
+            team2_tank["passive"] = passive_t2_tank
+            if team1_dps["passive"] == "Void" and random.randint(1, 2) == 1:
+                team2_dps["passive"] = None
+            if team1_tank["passive"] == "Void" and random.randint(1, 2) == 1:
+                team2_tank["passive"] = None
+            if team2_dps["passive"] == "Void" and random.randint(1, 2) == 1:
+                team1_dps["passive"] = None
+            if team2_tank["passive"] == "Void" and random.randint(1, 2) == 1:
+                team1_tank["passive"] = None
+            
+            # Regeneration
+            async def regeneration(pipo):
+                r = random.randint(1, 3)
+                if r == 1 or r == 2:
+                    pipo["hp"] += 1
+                    await ctx.send(f"{pipo['name']} regenerates 1 HP!")
+            if team1_dps["passive"] == "Regeneration":
+                await regeneration(team1_dps)
+            if team1_tank["passive"] == "Regeneration":
+                await regeneration(team1_tank)
+            if team2_dps["passive"] == "Regeneration":
+                await regeneration(team2_dps)
+            if team2_tank["passive"] == "Regeneration":
+                await regeneration(team2_tank)
+            
+            # Rapid Metabolism
+            async def rapid_metabolism(pipo):
+                if random.randint(1, 4) == 1:
+                    stat = random.choice(["attack", "defense", "speed"])
+                    pipo[stat] += 1
+                    await ctx.send(f"{pipo['name']} activates Rapid Metabolism!")
+                    await ctx.send(f"{pipo['name']}'s {stat} increased by 1!")
+            if team1_dps["passive"] == "Rapid Metabolism":
+                await rapid_metabolism(team1_dps)
+            if team1_tank["passive"] == "Rapid Metabolism":
+                await rapid_metabolism(team1_tank)
+            if team2_dps["passive"] == "Rapid Metabolism":
+                await rapid_metabolism(team2_dps)
+            if team2_tank["passive"] == "Rapid Metabolism":
+                await rapid_metabolism(team2_tank)
+            
+            # Velocity
             pipof1, pipof2, pipol1, pipol2 = await alt_velocity(team1_tank, team1_dps, team2_tank, team2_dps)
             
             
+            await ctx.send(f"----------------------------------------------------------------------------------------")
+            await ctx.send(f"ROUND {round}")
+            
+            # Attack
             async def attack(pipo):
                 if pipo["hp"]<= 0:
                     return
@@ -884,6 +996,13 @@ class Combat(commands.Cog):
                         defender = 2
                     if defender == 1:
                         dmg = await damage(pipo, team2_dps)
+                        hitted_pipo = team2_dps
+                        
+                        # Parry
+                        if team2_dps["passive"] == "Parry" and random.randint(1, 5) == 1:
+                            dmg = cl(dmg/2)
+                            await ctx.send(f"{team2_dps['name']} parries the attack!")
+                            
                         team2_dps["hp"] -= dmg
                         await ctx.send(f"{pipo['name']} attacks {team2_dps['name']}!")
                         await ctx.send(f"Dealing {dmg} damage!\n\n")
@@ -892,6 +1011,13 @@ class Combat(commands.Cog):
                             await ctx.send(f"{team2_dps['name']} fainted!")
                     else:
                         dmg = await damage(pipo, team2_tank)
+                        hitted_pipo = team2_tank
+                        
+                        # Parry
+                        if team2_tank["passive"] == "Parry" and random.randint(1, 5) == 1:
+                            dmg = cl(dmg/2)
+                            await ctx.send(f"{team2_tank['name']} parries the attack!")
+                        
                         team2_tank["hp"] -= dmg
                         await ctx.send(f"{pipo['name']} attacks {team2_tank['name']}!")
                         await ctx.send(f"Dealing {dmg} damage!\n\n")
@@ -906,6 +1032,13 @@ class Combat(commands.Cog):
                         defender = 2
                     if defender == 1:
                         dmg = await damage(pipo, team1_dps)
+                        hitted_pipo = team1_dps
+                        
+                        # Parry
+                        if team1_dps["passive"] == "Parry" and random.randint(1, 5) == 1:
+                            dmg = cl(dmg/2)
+                            await ctx.send(f"{team1_dps['name']} parries the attack!")
+                        
                         team1_dps["hp"] -= dmg
                         await ctx.send(f"{pipo['name']} attacks {team1_dps['name']}!")
                         await ctx.send(f"Dealing {dmg} damage!\n\n")
@@ -914,20 +1047,70 @@ class Combat(commands.Cog):
                             await ctx.send(f"{team1_dps['name']} fainted!")
                     else:
                         dmg = await damage(pipo, team1_tank)
+                        hitted_pipo = team1_tank
+                        
+                        # Parry
+                        if team1_tank["passive"] == "Parry" and random.randint(1, 5) == 1:
+                            dmg = cl(dmg/2)
+                            await ctx.send(f"{team1_tank['name']} parries the attack!")
+                        
                         team1_tank["hp"] -= dmg
                         await ctx.send(f"{pipo['name']} attacks {team1_tank['name']}!")
                         await ctx.send(f"Dealing {dmg} damage!\n\n")
                         if team1_tank["hp"] <= 0:
                             team1_tank["hp"] = 0
                             await ctx.send(f"{team1_tank['name']} fainted!")
+                return hitted_pipo["hp"]
+            
+            async def combat_passives(pipo):
+                # Healing Touch
+                if pipo["passive"] == "Healing Touch":
+                    pipo["hp"] += cl(pipo["attack"]/2)
+                    if pipo["hp"] > pipo["max_hp"]:
+                        pipo["hp"] = pipo["max_hp"]
+                    await ctx.send(f"{pipo['name']} activates Healing Touch!")
+                    await ctx.send(f"{pipo['name']} recovers {cl(pipo['attack']/2)} HP!")
+                else:
+                    hitted_pipo = await attack(pipo)
+                    # Poisoneous Skin
+                    if pipo["passive"] == "Poisoneous Skin" and random.randint(1, 4) == 1:
+                        if hitted_pipo["name"] == team1_dps["name"]:
+                            poison_t1_dps = poison_t1_dps + 1
+                        if hitted_pipo["name"] == team1_tank["name"]:
+                            poison_t1_tank = poison_t1_tank + 1
+                        if hitted_pipo["name"] == team2_dps["name"]:
+                            poison_t2_dps = poison_t2_dps + 1
+                        if hitted_pipo["name"] == team2_tank["name"]:
+                            poison_t2_tank = poison_t2_tank + 1
+                if pipo["passive"] == "Susteined Hits":
+                    hitted_pipo = await attack(pipo)
+                return pipo["hp"]
+            
+            async def checK_pipo(pipo):
+                if pipo["name"] == team1_dps["name"]:
+                    team1_dps["hp"] = pipo["hp"]
+                if pipo["name"] == team1_tank["name"]:
+                    team1_tank["hp"] = pipo["hp"]
+                if pipo["name"] == team2_dps["name"]:
+                    team2_dps["hp"] = pipo["hp"]
+                if pipo["name"] == team2_tank["name"]:
+                    team2_tank["hp"] = pipo["hp"]
+            
+            
             if pipof1["hp"] > 0:
-                await attack(pipof1)
+                pipof1["hp"] = await combat_passives(pipof1)
+                await checK_pipo(pipof1)
             if pipof2["hp"] > 0:
-                await attack(pipof2)
+                pipof2["hp"] = await combat_passives(pipof2)
+                await checK_pipo(pipof2)
             if pipol1["hp"] > 0:
-                await attack(pipol1)
+                pipol1["hp"] = await combat_passives(pipol1)
+                await checK_pipo(pipol1)
             if pipol2["hp"] > 0:
-                await attack(pipol2)
+                pipol2["hp"] = await combat_passives(pipol2)
+                await checK_pipo(pipol2)
+                
+                
             team1_total_hp = int(team1_tank["hp"] + team1_dps["hp"])
             team2_total_hp = int(team2_tank["hp"] + team2_dps["hp"])
             await ctx.send(f"{team1_dps['name']}:bow_and_arrow:: {team1_dps["hp"]} <- HP -> {team1_tank['hp']} :{team1_tank["name"]}:shield:   ||  :shield:{team2_tank['name']}: {team2_tank['hp']}<- HP -> {team2_dps['hp']} ::bow_and_arrow:{team2_dps['name']}")
