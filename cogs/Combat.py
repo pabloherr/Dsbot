@@ -688,9 +688,71 @@ class Combat(commands.Cog):
     # Alternative combat
     async def alt_fight(self, ctx, pipo1, pipo2):
         round = 0
+        passive_1 = pipo1["passive"]
+        passive_2 = pipo2["passive"]
+        atk_1 = pipo1["attack"]
+        atk_2 = pipo2["attack"]
         while pipo1["hp"] > 0 and pipo2["hp"] > 0:
             round += 1
             
+            # Poisoneous Skin
+            poison_1 = 0
+            poison_2 = 0
+            if poison_1 > 0:
+                pipo1["hp"] -= poison_1
+                await ctx.send(f"{pipo1['name']} takes {poison_1} damage!")
+            if poison_2 > 0:
+                pipo2["hp"] -= poison_2
+                await ctx.send(f"{pipo2['name']} takes {poison_2} damage!")
+            
+            #Berserk
+            pipo1["attack"] = atk_1
+            pipo2["attack"] = atk_2
+            async def berserk(pipo):
+                if pipo["hp"] < pipo["max_hp"] and pipo["hp"] >= pipo["max_hp"]/2:
+                    pipo["attack"] += cl(pipo["attack"]/4)
+                    await ctx.send(f"{pipo['name']} is in the first state Berserk mode!")
+                if pipo["hp"] < pipo["max_hp"]/2:
+                    pipo["attack"] += cl(pipo["attack"]/2)
+                    await ctx.send(f"{pipo['name']} is full in Berserk mode!")
+            if pipo1["passive"] == "Berserk":
+                await berserk(pipo1)
+            if pipo2["passive"] == "Berserk":
+                await berserk(pipo2)
+            
+            # Void
+            pipo1["passive"] = passive_1
+            pipo2["passive"] = passive_2
+            if pipo1["passive"] == "Void" and random.randint(1, 2) == 1:
+                pipo2["passive"] = None
+            if pipo2["passive"] == "Void" and random.randint(1, 2) == 1:
+                pipo1["passive"] = None
+            
+            # Regeneration
+            async def regeneration(pipo):
+                r = random.randint(1, 3)
+                if r == 1 or r == 2:
+                    pipo["hp"] += 1
+                    await ctx.send(f"{pipo['name']} regenerates 1 HP!")
+            if pipo1["passive"] == "Regeneration":
+                await regeneration(pipo1)
+            if pipo2["passive"] == "Regeneration":
+                await regeneration(pipo2)
+            
+            
+            # Rapid Metabolism
+            async def rapid_metabolism(pipo):
+                if random.randint(1, 4) ==1:
+                    stat = random.choice(["attack", "defense", "speed"])
+                    pipo[stat] += 1
+                    await ctx.send(f"{pipo['name']} activates Rapid Metabolism!")
+                    await ctx.send(f"{pipo['name']}'s {stat} increased by 1!")
+            if pipo1["passive"] == "Rapid Metabolism":
+                await rapid_metabolism(pipo1)
+            if pipo2["passive"] == "Rapid Metabolism":
+                await rapid_metabolism(pipo2)
+            
+            # Velocity
             pipofast, piposlow = await alt_velocity(pipo1, pipo2)
             
             await ctx.send(f"----------------------------------------------------------------------------------------")
@@ -699,62 +761,66 @@ class Combat(commands.Cog):
                 piposlow = pipo2
             else:
                 piposlow = pipo1
-                    
-            dmg = await damage(pipofast, piposlow)
             
-            # Parry 
-            if piposlow["passive"] == "Parry" and random.randint(1, 5) ==1:
-                dmg = cl(dmg/2)
-                await ctx.send(f"{piposlow['name']} parries the attack!")
-                
-            piposlow["hp"] -= dmg
-            await ctx.send(f"{pipofast['name']} attacks!")
-            await ctx.send(f"Dealing {dmg} damage!")
-            
-            # Passive Sustained Hit
-            if pipofast["passive"] == "Sustained Hit" and random.randint(1, 4) ==1:
-                dmg = await damage(pipofast, piposlow)
-                
+            # Attack
+            async def attack(pipoatk, pipodef):
+                dmg  = await damage(pipoatk, pipodef)
                 # Parry
-                if piposlow["passive"] == "Parry" and random.randint(1, 5) ==1:
+                if pipodef["passive"] == "Parry" and random.randint(1, 5) ==1:
                     dmg = cl(dmg/2)
-                    await ctx.send(f"{piposlow['name']} parries the attack!")
-                    
-                piposlow["hp"] -= dmg
-                await ctx.send(f"{pipofast['name']} attacks again!")
+                    await ctx.send(f"{pipodef['name']} parries the attack!")
+                
+                pipodef["hp"] -= dmg
+                await ctx.send(f"{pipoatk['name']} attacks!")
                 await ctx.send(f"Dealing {dmg} damage!")
+                if pipodef["hp"] <= 0:
+                    pipodef["hp"] = 0
+                    await ctx.send(f"{pipodef['name']} fainted!")
+                return pipodef["hp"]
             
-            if piposlow["hp"] <= 0:
-                piposlow["hp"] = 0
-                await ctx.send(f"{piposlow['name']} fainted!")
-            else:
-                dmg = await damage(piposlow, pipofast)
-                pipofast["hp"] -= dmg
-                
-                # Parry
-                if pipofast["passive"] == "Parry" and random.randint(1, 5) ==1:
-                    dmg = cl(dmg/2)
-                    await ctx.send(f"{pipofast['name']} parries the attack!")
-                    
-                await ctx.send(f"{piposlow['name']} attacks!")
-                await ctx.send(f"Dealing {dmg} damage!")
-                
-                # Passive Sustained Hit
-                if piposlow["passive"] == "Sustained Hit" and random.randint(1, 4) ==1:
-                    dmg = await damage(piposlow, pipofast)
-                    
-                    # Parry
-                    if pipofast["passive"] == "Parry" and random.randint(1, 5) ==1:
-                        dmg = cl(dmg/2)
-                        await ctx.send(f"{pipofast['name']} parries the attack!")
-                        
-                    pipofast["hp"] -= dmg
-                    await ctx.send(f"{piposlow['name']} attacks again!")
-                    await ctx.send(f"Dealing {dmg} damage!")
-                
-                if pipofast["hp"] <= 0:
-                    pipofast["hp"] = 0
-                    await ctx.send(f"{pipofast['name']} fainted!")
+            
+            # Pipo fast attacks
+            if pipofast["hp"] > 0:
+                # Healing Touch
+                if pipofast["passive"] == "Healing Touch":
+                    pipofast["hp"] += cl(pipofast["attack"]/2)
+                    if pipofast["hp"] > pipofast["max_hp"]:
+                        pipofast["hp"] = pipofast["max_hp"]
+                    await ctx.send(f"{pipofast['name']} activates Healing Touch!")
+                    await ctx.send(f"{pipofast['name']} recovers {cl(pipofast['attack']/2)} HP!")
+                else:
+                    piposlow["hp"] = await attack(pipofast, piposlow)
+                    # Poisoneous Skin
+                    if pipofast["passive"] == "Poisoneous Skin" and random.randint(1, 4) == 1:
+                        if pipofast["name"] == pipo1["name"]:
+                            poison_2 += 1
+                        else:
+                            poison_1 += 1
+                # Susteined Hits
+                if pipofast["passive"] == "Susteined Hits":
+                    piposlow["hp"] = await attack(pipofast, piposlow)
+            
+            # Pipo slow attacks
+            if piposlow["hp"] > 0:
+                # Healing Touch
+                if piposlow["passive"] == "Healing Touch":
+                    piposlow["hp"] += cl(piposlow["attack"]/2)
+                    if piposlow["hp"] > piposlow["max_hp"]:
+                        piposlow["hp"] = piposlow["max_hp"]
+                    await ctx.send(f"{piposlow['name']} activates Healing Touch!")
+                    await ctx.send(f"{piposlow['name']} recovers {cl(piposlow['attack']/2)} HP!")
+                else:
+                    pipofast["hp"] = await attack(piposlow, pipofast)
+                    # Poisoneous Skin
+                    if piposlow["passive"] == "Poisoneous Skin" and random.randint(1, 4) == 1:
+                        if piposlow["name"] == pipo1["name"]:
+                            poison_2 += 1
+                        else:
+                            poison_1 += 1
+                # Susteined Hits
+                if piposlow["passive"] == "Susteined Hits":
+                    pipofast["hp"] = await attack(piposlow, pipofast)
+            
             
             await ctx.send(f"{pipo1['name']} HP: {pipo1['hp']} {pipo2['name']} HP: {pipo2['hp']}")
             if pipo1["name"] == pipofast["name"]:
