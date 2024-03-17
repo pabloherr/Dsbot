@@ -9,7 +9,7 @@ db = db_client["discord"]
 async def random_pipo( wild = False) -> Pipo:
     
     rarity = random.choices(["common", "uncommon", "rare", "legendary"], weights=[60, 30, 10, 3], k=1)[0]
-    passive = random.choice(["None", "Invulnerable","Feel No Pain", "Lethal Hits", "Fight First"])
+    passive = random.choice(["None", "Invulnerable","Feel No Pain", "Lethal Hits", "Fight First", "Sustained Hits", "Parry", "Rapid Metabolism", "Regeneration", "Void", "Berserker", "Healing Touch", "Poisoneous Skin"])
     if rarity == "common":
         stats = [1, 1, 2, 3]
         price = 10
