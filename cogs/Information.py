@@ -18,9 +18,10 @@ class Information(commands.Cog):
                     "Parry": "Your pipo has 20'%' of chance of reflecting 50'%' of incuming damage",
                     "Rapid Metabolism": "Your pipo has 25'%' of chance of increasing one of your stats by 1",
                     "Regeneration": "Your pipo has 66'%' of chance of healing 1 HP eche round",
-                    "Void": "Your pipo have 50'%' of chance to desable the passive of the enemy for the next turn",
+                    "Void": "Your pipo have 50'%' of chance to desable the passive and the object of the enemy for the next turn",
                     "Berserker": "Your pipo's attack increases by 25% when it is injured, and by 50% when it is below half HP",
-                    "Healing Touch": "Your pipo has 25'%' of chance that instead of attacking, he heals an ally or himself for an amount equal to half his attack"
+                    "Healing Touch": "Your pipo has 25'%' of chance that instead of attacking, he heals an ally or himself for an amount equal to half his attack",
+                    "Poisoneous Skin": "Your pipo has 25'%' of chance of poisoning the enemy when it is attacked, dealing 1 extra damage per round (can stack)"
                     }
         if passive == None:
             for i in passives:
@@ -51,12 +52,13 @@ class Information(commands.Cog):
                             "Poison Dart": "The pipo you attack have a 60'%' of chance of not being able to heal itself",
                             "Tricked Coin": "You always attack first when your pipo's speed is equal to the enemy's speed",
                             "Training Sheet": "Increase the experience gained by 25'%'",
-                            "Dancing Shoes": "When the hp of the pipo that is usign this item drops below 50'%' it changes places with another pipo of it's team",
+                            "Dancing Shoes": "When the hp of the pipo that is using this item drops below 50'%' it changes places with another pipo of it's team",
                             "Dinamite Vest": "When the pipo that is using this item dies, the enemy that killed it receives damage equal to the pipo's attack",
                             "Mortar": "When the pipo that is using this item attacks, it has the same chance to attack the enemy's tank as the enemy's dps",
+                            "Passive Absorber": "Give a passive to a pipo that doesn't have one",
                             "Pipo's Sword": "Your pipo's attack increase by 1",
                             "Pipo's Shield": "Your pipo's defense increase by 1",
-                            "Pipo's Boots": "Your pipo's speed increase by 1"
+                            "Pipo's Boots": "Your pipo's speed increase by 1",
                             }
         if object == None:
             for i in in_combat_objects:

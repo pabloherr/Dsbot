@@ -74,7 +74,7 @@ class Combat(commands.Cog):
         pipo2["in_combat"] = False
         self.db["users"].update_one({"id": user1["id"]}, {"$set": user1})
         self.db["users"].update_one({"id": user2["id"]}, {"$set": user2})
-        
+    
     # combat defender
     @commands.command(brief='Combat the defender pipo of another user. !combat_def <your_pipo_name> <@user>',
                         aliases=['cd'])
@@ -303,8 +303,7 @@ class Combat(commands.Cog):
         
         pipo1["in_combat"] = False
         self.db["users"].update_one({"id": user["id"]}, {"$set": user})
-        
-        
+    
     #wild combat 2v2
     @commands.command(brief='Combat 2 pipos vs 2 wild pipos. !wild_combat2v2 <your_pipo1_name> <your_pipo2_name> <zone>(forest, desert, mountain)',
                         aliases=['wc2v2'])
@@ -373,6 +372,7 @@ class Combat(commands.Cog):
         pipo1["in_combat"] = False
         pipo2["in_combat"] = False
         self.db["users"].update_one({"id": user["id"]}, {"$set": user})
+    
     
     
     #raid combat pipos vs mega pipo
@@ -685,7 +685,7 @@ class Combat(commands.Cog):
             pipo3["hp"] = pipo3["max_hp"]
             return True, pipo1["hp"], pipo2["hp"], pipo3["hp"]
     
-    #alterate combat
+    # Alternative combat
     async def alt_fight(self, ctx, pipo1, pipo2):
         round = 0
         while pipo1["hp"] > 0 and pipo2["hp"] > 0:
@@ -699,28 +699,69 @@ class Combat(commands.Cog):
                 piposlow = pipo2
             else:
                 piposlow = pipo1
-            
+                    
             dmg = await damage(pipofast, piposlow)
             
+            # Parry 
+            if piposlow["passive"] == "Parry" and random.randint(1, 5) ==1:
+                dmg = cl(dmg/2)
+                await ctx.send(f"{piposlow['name']} parries the attack!")
+                
             piposlow["hp"] -= dmg
             await ctx.send(f"{pipofast['name']} attacks!")
             await ctx.send(f"Dealing {dmg} damage!")
+            
+            # Passive Sustained Hit
+            if pipofast["passive"] == "Sustained Hit" and random.randint(1, 4) ==1:
+                dmg = await damage(pipofast, piposlow)
+                
+                # Parry
+                if piposlow["passive"] == "Parry" and random.randint(1, 5) ==1:
+                    dmg = cl(dmg/2)
+                    await ctx.send(f"{piposlow['name']} parries the attack!")
+                    
+                piposlow["hp"] -= dmg
+                await ctx.send(f"{pipofast['name']} attacks again!")
+                await ctx.send(f"Dealing {dmg} damage!")
+            
             if piposlow["hp"] <= 0:
                 piposlow["hp"] = 0
                 await ctx.send(f"{piposlow['name']} fainted!")
             else:
                 dmg = await damage(piposlow, pipofast)
                 pipofast["hp"] -= dmg
+                
+                # Parry
+                if pipofast["passive"] == "Parry" and random.randint(1, 5) ==1:
+                    dmg = cl(dmg/2)
+                    await ctx.send(f"{pipofast['name']} parries the attack!")
+                    
                 await ctx.send(f"{piposlow['name']} attacks!")
                 await ctx.send(f"Dealing {dmg} damage!")
+                
+                # Passive Sustained Hit
+                if piposlow["passive"] == "Sustained Hit" and random.randint(1, 4) ==1:
+                    dmg = await damage(piposlow, pipofast)
+                    
+                    # Parry
+                    if pipofast["passive"] == "Parry" and random.randint(1, 5) ==1:
+                        dmg = cl(dmg/2)
+                        await ctx.send(f"{pipofast['name']} parries the attack!")
+                        
+                    pipofast["hp"] -= dmg
+                    await ctx.send(f"{piposlow['name']} attacks again!")
+                    await ctx.send(f"Dealing {dmg} damage!")
+                
                 if pipofast["hp"] <= 0:
                     pipofast["hp"] = 0
                     await ctx.send(f"{pipofast['name']} fainted!")
+            
             await ctx.send(f"{pipo1['name']} HP: {pipo1['hp']} {pipo2['name']} HP: {pipo2['hp']}")
             if pipo1["name"] == pipofast["name"]:
                 pipo1, pipo2 = pipofast, piposlow
             else:
                 pipo1, pipo2 = piposlow, pipofast
+        
         await ctx.send(f"----------------------------------------------------------------------------------------")
         await ctx.send("COMBAT ENDED!")
         if pipo1["hp"] <= 0:
