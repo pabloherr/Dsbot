@@ -1,7 +1,7 @@
 import random
 from discord.ext import commands
 from database import db_client
-from tools import damage, wild, velocity, alt_velocity
+from tools import damage, wild, alt_velocity
 from math import ceil as cl
 
 class Combat(commands.Cog):

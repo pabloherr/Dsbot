@@ -26,7 +26,7 @@ async def random_pipo( wild = False) -> Pipo:
     pipo_name = "Pipo_" + str(random.randint(1, 100))
     
     pipo = Pipo(wild = wild, rarity=rarity,price=price, name=pipo_name,
-                hp=5+stats[0],max_hp=5+stats[0], attack=stats[1], 
+                hp=10+stats[0],max_hp=10+stats[0], attack=stats[1], 
                 defense=stats[2], speed=stats[3], passive=passive)
     return pipo.dict()
 
@@ -69,6 +69,7 @@ async def lvlup(pipo: dict, stat1: str, stat2: str) -> dict:
         stat2 = "max_hp"
     pipo[stat1] += 1
     pipo[stat2] += 1
+    pipo["max_hp"] += 2 
     pipo["hp"] = pipo["max_hp"]
     pipo["lvl"] += 1
     pipo["exp"] = 0

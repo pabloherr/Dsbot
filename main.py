@@ -26,4 +26,4 @@ async def setup_hook():
             print("Unable to load pycache folder.")
 
 
-client.run('') # Replace with your own token.
+client.run('MTIxMjk5MzYyMDc0ODAwOTQ4Mg.GjJY9D.ynTwIinnEFOb9H2oH-VVVB99stkF-rwn-D0ujE') # Replace with your own token.
