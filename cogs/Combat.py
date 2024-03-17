@@ -47,6 +47,18 @@ class Combat(commands.Cog):
             await ctx.send("Pipo2 not found")
             return
         
+        if pipo1["in_combat"]:
+            await ctx.send(f"{pipo1['name']} is already in combat")
+            return
+        if pipo2["in_combat"]:
+            await ctx.send(f"{pipo2['name']} is already in combat")
+            return
+        
+        pipo1["in_combat"] = True
+        pipo2["in_combat"] = True
+        self.db["users"].update_one({"id": user1["id"]}, {"$set": user1})
+        self.db["users"].update_one({"id": user2["id"]}, {"$set": user2})
+        
         await ctx.send(f"{pipo1['name']} is ready to fight!")
         await ctx.send(f"{pipo2['name']} is ready to fight!")
         winner, pipo1["hp"], pipo2["hp"] = await self.alt_fight(ctx, pipo1, pipo2)
@@ -57,8 +69,12 @@ class Combat(commands.Cog):
         if winner == 'pipo1':
             await self.postgame(winner=pipo1, loser=pipo2, loser_to=True, user_win= user1, user_lose= user2, leaderboards=True)
         else:
-            await self.postgame(winner=pipo2, loser=pipo1, loser_to=True, user_win= user2,user_lose= user1, leaderboards=True)
-    
+            await self.postgame(winner=pipo2, loser=pipo1, loser_to=True, user_win= user2,user_lose= user1, leaderboards=True) 
+        pipo1["in_combat"] = False
+        pipo2["in_combat"] = False
+        self.db["users"].update_one({"id": user1["id"]}, {"$set": user1})
+        self.db["users"].update_one({"id": user2["id"]}, {"$set": user2})
+        
     # combat defender
     @commands.command(brief='Combat the defender pipo of another user. !combat_def <your_pipo_name> <@user>',
                         aliases=['cd'])
@@ -66,11 +82,26 @@ class Combat(commands.Cog):
         user1 = self.db["users"].find_one({"id": ctx.author.id})
         user2 = self.db["users"].find_one({"id": ctx.message.mentions[0].id})
         pipo1 = next((pipo for pipo in user1["pipos"] if pipo["name"] == pipo_name), None)
+        
+        if user2["defender"] is None:
+            await ctx.send("Defender not found")
+            return
+        
         pipo2 = user2["defender"]
+        
+        if pipo1 is None:
+            await ctx.send("Pipo not found")
+            return
+        
+        if pipo1["in_combat"]:
+            await ctx.send(f"{pipo1['name']} is already in combat")
+            return
+        
+        pipo1["in_combat"] = True
+        self.db["users"].update_one({"id": user1["id"]}, {"$set": user1})
         
         if await self.precombat(ctx, pipo1, pipo2) == "cancel":
             return
-        
         
         winner, pipo1["hp"], pipo2["hp"] = await self.alt_fight(ctx, pipo1, pipo2)
         self.db["users"].update_one({"id": user1["id"]}, {"$set": user1})
@@ -79,6 +110,8 @@ class Combat(commands.Cog):
             await self.postgame(ctx, winner= pipo1, loser = pipo2, loser_to=True, user_win = user1, user_lose= user2, leaderboards=True)
         else:
             await self.postgame(ctx, pipo2, pipo1, loser_to=True, user_win= user2, user_lose= user1, leaderboards=True)
+        pipo1["in_combat"] = False
+        self.db["users"].update_one({"id": user1["id"]}, {"$set": user1})
     
     #combat 2v2
     @commands.command(brief='Combat 2 pipos vs 2 pipos. !combat2v2 <your_pipo1_name> <your_pipo2_name> <other_user_pipo1_name> <other_user_pipo2_name> <@user>',
@@ -102,6 +135,26 @@ class Combat(commands.Cog):
         if pipo4 is None:
             await ctx.send(f"{pipo4} not found")
             return
+        
+        if pipo1["in_combat"]:
+            await ctx.send(f"{pipo1['name']} is already in combat")
+            return
+        if pipo2["in_combat"]:
+            await ctx.send(f"{pipo2['name']} is already in combat")
+            return
+        if pipo3["in_combat"]:
+            await ctx.send(f"{pipo3['name']} is already in combat")
+            return
+        if pipo4["in_combat"]:
+            await ctx.send(f"{pipo4['name']} is already in combat")
+            return
+        
+        pipo1["in_combat"] = True
+        pipo2["in_combat"] = True
+        pipo3["in_combat"] = True
+        pipo4["in_combat"] = True
+        self.db["users"].update_one({"id": user1["id"]}, {"$set": user1})
+        self.db["users"].update_one({"id": user2["id"]}, {"$set": user2})
         
         if pipo1["tank"]:
             team1_tank = pipo1
@@ -170,6 +223,12 @@ class Combat(commands.Cog):
         #self.db["users"].update_one({"id": user1["id"]}, {"$set": user1})
         #self.db["users"].update_one({"id": user2["id"]}, {"$set": user2})
         #
+        pipo1["in_combat"] = False
+        pipo2["in_combat"] = False
+        pipo3["in_combat"] = False
+        pipo4["in_combat"] = False
+        self.db["users"].update_one({"id": user1["id"]}, {"$set": user1})
+        self.db["users"].update_one({"id": user2["id"]}, {"$set": user2})
     
     
     
@@ -180,6 +239,18 @@ class Combat(commands.Cog):
         user = self.db["users"].find_one({"id": ctx.author.id})
         pipo1 = next((pipo for pipo in user["pipos"] if pipo["name"] == pipo_name), None)
         pipo2 = await wild(zone)
+        
+        if pipo1 is None:
+            await ctx.send(f"{pipo1} not found")
+            return
+        
+        if pipo1["in_combat"]:
+            await ctx.send(f"{pipo1['name']} is already in combat")
+            return
+        
+        pipo1["in_combat"] = True
+        self.db["users"].update_one({"id": user["id"]}, {"$set": user})
+        
         
         if await self.precombat(ctx, pipo1, pipo2) == "cancel":
             return
@@ -196,8 +267,9 @@ class Combat(commands.Cog):
             if pipo1["lvl"] < 3:
                 await self.postgame(ctx, winner= pipo2, loser = pipo1, user_lose = user, loser_to=True)
             self.db["wild_pipos"].insert_one(pipo2)
-    
-        #combat pipo vs wild pipo of the list of survivors
+            
+        pipo1["in_combat"] = False
+        self.db["users"].update_one({"id": user["id"]}, {"$set": user})
     
     # combat wild pipo survivor
     @commands.command(brief='Combat a wild pipo who survive a combat. !wild_combat <your_pipo_name> <wild_pipo_name>',
@@ -206,6 +278,17 @@ class Combat(commands.Cog):
         user = self.db["users"].find_one({"id": ctx.author.id})
         pipo1 = next((pipo for pipo in user["pipos"] if pipo["name"] == pipo_name), None)
         pipo2 = self.db["wild_pipos"].find_one({"name": wild_pipo})
+        
+        if pipo1 is None:
+            await ctx.send(f"{pipo1} not found")
+            return
+        
+        if pipo1["in_combat"]:
+            await ctx.send(f"{pipo1['name']} is already in combat")
+            return
+        
+        pipo1["in_combat"] = True
+        self.db["users"].update_one({"id": user["id"]}, {"$set": user})
         
         if await self.precombat(ctx, pipo1, pipo2) == "cancel":
             return
@@ -217,7 +300,11 @@ class Combat(commands.Cog):
         if winner == 'pipo1':
             await self.postgame(ctx,ctx,winner= pipo1, loser = pipo2, user_win = user)
             self.db["wild_pipos"].delete_one({"name": wild_pipo})
-    
+        
+        pipo1["in_combat"] = False
+        self.db["users"].update_one({"id": user["id"]}, {"$set": user})
+        
+        
     #wild combat 2v2
     @commands.command(brief='Combat 2 pipos vs 2 wild pipos. !wild_combat2v2 <your_pipo1_name> <your_pipo2_name> <zone>(forest, desert, mountain)',
                         aliases=['wc2v2'])
@@ -227,6 +314,7 @@ class Combat(commands.Cog):
         pipo2 = next((pipo for pipo in user["pipos"] if pipo["name"] == pipo2), None)
         pipo3 = await wild(zone)
         pipo4 = await wild(zone)
+        
         if pipo1 is None:
             await ctx.send(f"{pipo1} not found")
             return
@@ -239,6 +327,18 @@ class Combat(commands.Cog):
         if pipo4 is None:
             await ctx.send(f"{pipo4} not found")
             return
+        
+        if pipo1["in_combat"]:
+            await ctx.send(f"{pipo1['name']} is already in combat")
+            return
+        if pipo2["in_combat"]:
+            await ctx.send(f"{pipo2['name']} is already in combat")
+            return
+        
+        pipo1["in_combat"] = True
+        pipo2["in_combat"] = True
+        self.db["users"].update_one({"id": user["id"]}, {"$set": user})
+        
         
         if pipo1["tank"]:
             team1_tank = pipo1
@@ -270,7 +370,9 @@ class Combat(commands.Cog):
         if winner == 'team1':
             await self.postgame(ctx, winner=pipo1, loser=pipo3, user_win= user)
             await self.postgame(ctx, winner=pipo2, loser=pipo4, user_win= user)
-    
+        pipo1["in_combat"] = False
+        pipo2["in_combat"] = False
+        self.db["users"].update_one({"id": user["id"]}, {"$set": user})
     
     
     #raid combat pipos vs mega pipo
