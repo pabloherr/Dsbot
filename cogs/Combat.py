@@ -719,25 +719,30 @@ class Combat(commands.Cog):
             #Berserk
             pipo1["attack"] = atk_1
             pipo2["attack"] = atk_2
-            async def berserk(pipo):
+            async def berserker(pipo):
                 if pipo["hp"] < pipo["max_hp"] and pipo["hp"] >= pipo["max_hp"]/2:
                     pipo["attack"] += cl(pipo["attack"]/4)
                     await ctx.send(f"{pipo['name']} is in the first state Berserk mode!")
                 if pipo["hp"] < pipo["max_hp"]/2:
-                    pipo["attack"] += cl(pipo["attack"]/2)
+                    pipo["attack"] += cl(pipo["attack"]/4)*2
                     await ctx.send(f"{pipo['name']} is full in Berserk mode!")
-            if pipo1["passive"] == "Berserk":
-                await berserk(pipo1)
-            if pipo2["passive"] == "Berserk":
-                await berserk(pipo2)
+                await ctx.send(f'{pipo["name"]} attack: {pipo["attack"]}')
+                return pipo["attack"]
+            
+            if pipo1["passive"] == "Berserker":
+                pipo1["attack"] = await berserker(pipo1)
+            if pipo2["passive"] == "Berserker":
+                pipo2["attack"] = await berserker(pipo2)
             
             # Void
             pipo1["passive"] = passive_1
             pipo2["passive"] = passive_2
             if pipo1["passive"] == "Void" and random.randint(1, 2) == 1:
                 pipo2["passive"] = None
+                await ctx.send(f"{pipo2['name']} passive is voided!")
             if pipo2["passive"] == "Void" and random.randint(1, 2) == 1:
                 pipo1["passive"] = None
+                await ctx.send(f"{pipo1['name']} passive is voided!")
             
             # Regeneration
             async def regeneration(pipo):
@@ -838,7 +843,8 @@ class Combat(commands.Cog):
                 if piposlow["passive"] == "Sustained Hits" and random.randint(1, 4) == 1:
                     pipofast["hp"], piposlow["hp"] = await attack(piposlow, pipofast)
             
-            
+            pipo1["passive"] = passive_1
+            pipo2["passive"] = passive_2
             await ctx.send(f"{pipo1['name']} HP: {pipo1['hp']} {pipo2['name']} HP: {pipo2['hp']}")
             if pipo1["name"] == pipofast["name"]:
                 pipo1, pipo2 = pipofast, piposlow
@@ -847,6 +853,7 @@ class Combat(commands.Cog):
         
         await ctx.send(f"----------------------------------------------------------------------------------------")
         await ctx.send("COMBAT ENDED!")
+        
         if pipo1["hp"] <= 0:
             await ctx.send(f"{pipo1['name']} fainted!")
             await ctx.send(f"{pipo2['name']} wins!")
@@ -925,22 +932,23 @@ class Combat(commands.Cog):
             team1_tank["attack"] = atk_t1_tank
             team2_dps["attack"] = atk_t2_dps
             team2_tank["attack"] = atk_t2_tank
-            async def berserk(pipo):
+            async def berserker(pipo):
                 if pipo["hp"] < pipo["max_hp"] and pipo["hp"] >= pipo["max_hp"]/2:
                     pipo["attack"] += cl(pipo["attack"]/4)
                     await ctx.send(f"{pipo['name']} is in the first state Berserk mode!")
                 if pipo["hp"] < pipo["max_hp"]/2:
-                    pipo["attack"] += cl(pipo["attack"]/2)
+                    pipo["attack"] += cl(pipo["attack"]/4)*2
                     await ctx.send(f"{pipo['name']} is full in Berserk mode!")
+                return pipo["attack"]
                 
-            if team1_dps["passive"] == "Berserk":
-                await berserk(team1_dps)
-            if team1_tank["passive"] == "Berserk":
-                await berserk(team1_tank)
-            if team2_dps["passive"] == "Berserk":
-                await berserk(team2_dps)
-            if team2_tank["passive"] == "Berserk":
-                await berserk(team2_tank)
+            if team1_dps["passive"] == "Berserker":
+                team1_dps["attack"] = await berserker(team1_dps)
+            if team1_tank["passive"] == "Berserker":
+                team1_tank["attack"] = await berserker(team1_tank)
+            if team2_dps["passive"] == "Berserker":
+                team2_dps["attack"] = await berserker(team2_dps)
+            if team2_tank["passive"] == "Berserker":
+                team2_tank["attack"] = await berserker(team2_tank)
             
             # Void
             team1_dps["passive"] = passive_t1_dps
@@ -949,12 +957,16 @@ class Combat(commands.Cog):
             team2_tank["passive"] = passive_t2_tank
             if team1_dps["passive"] == "Void" and random.randint(1, 2) == 1:
                 team2_dps["passive"] = None
+                await ctx.send(f"{team2_dps['name']} passive is voided!")
             if team1_tank["passive"] == "Void" and random.randint(1, 2) == 1:
                 team2_tank["passive"] = None
+                await ctx.send(f"{team2_tank['name']} passive is voided!")
             if team2_dps["passive"] == "Void" and random.randint(1, 2) == 1:
                 team1_dps["passive"] = None
+                await ctx.send(f"{team1_dps['name']} passive is voided!")
             if team2_tank["passive"] == "Void" and random.randint(1, 2) == 1:
                 team1_tank["passive"] = None
+                await ctx.send(f"{team1_tank['name']} passive is voided!")
             
             # Regeneration
             async def regeneration(pipo):
@@ -1140,7 +1152,12 @@ class Combat(commands.Cog):
                 pipol2["hp"] = await combat_passives(pipol2)
                 await checK_pipo(pipol2)
                 
-                
+            
+            
+            team1_dps["passive"] = passive_t1_dps
+            team1_tank["passive"] = passive_t1_tank
+            team2_dps["passive"] = passive_t2_dps
+            team2_tank["passive"] = passive_t2_tank
             team1_total_hp = int(team1_tank["hp"] + team1_dps["hp"])
             team2_total_hp = int(team2_tank["hp"] + team2_dps["hp"])
             await ctx.send(f"{team1_dps['name']}:bow_and_arrow:: {team1_dps["hp"]} <- HP -> {team1_tank['hp']} :{team1_tank["name"]}:shield:   ||  :shield:{team2_tank['name']}: {team2_tank['hp']}<- HP -> {team2_dps['hp']} ::bow_and_arrow:{team2_dps['name']}")
