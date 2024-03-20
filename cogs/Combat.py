@@ -68,9 +68,12 @@ class Combat(commands.Cog):
         self.db["users"].update_one({"id": user2["id"]}, {"$set": user2})
         
         if winner == 'pipo1':
-            await self.postgame(winner=pipo1, loser=pipo2, loser_to=True, user_win= user1, user_lose= user2, leaderboards=True)
+            await self.postgame(ctx, pipo1 = pipo1, pipo2 = pipo2, user = user1, leaderboards=True)
+            await self.postgame(ctx, pipo1 = pipo2, pipo2 = pipo1, user = user2, loser_to=True)
         else:
-            await self.postgame(winner=pipo2, loser=pipo1, loser_to=True, user_win= user2,user_lose= user1, leaderboards=True) 
+            await self.postgame(ctx, pipo1 = pipo2, pipo2 = pipo1, user = user2, leaderboards=True)
+            await self.postgame(ctx, pipo1 = pipo1, pipo2 = pipo2, user = user1, loser_to=True)
+        
         pipo1["in_combat"] = False
         pipo2["in_combat"] = False
         self.db["users"].update_one({"id": user1["id"]}, {"$set": user1})
@@ -108,9 +111,12 @@ class Combat(commands.Cog):
         self.db["users"].update_one({"id": user1["id"]}, {"$set": user1})
         
         if winner == 'pipo1':
-            await self.postgame(ctx, winner= pipo1, loser = pipo2, loser_to=True, user_win = user1, user_lose= user2, leaderboards=True)
+            await self.postgame(ctx, winner= pipo1, loser = pipo2, user_win = user1, leaderboards=True)
+            await self.postgame(ctx, winner= pipo2, loser = pipo1, user_lose = user2, loser_to=True)
         else:
-            await self.postgame(ctx, pipo2, pipo1, loser_to=True, user_win= user2, user_lose= user1, leaderboards=True)
+            await self.postgame(ctx, winner= pipo2, loser = pipo1, user_lose = user2, leaderboards=True)
+            await self.postgame(ctx, winner= pipo1, loser = pipo2, user_win = user1, loser_to=True)
+            
         pipo1["in_combat"] = False
         self.db["users"].update_one({"id": user1["id"]}, {"$set": user1})
     
@@ -210,20 +216,20 @@ class Combat(commands.Cog):
         await ctx.send(f'{msg2.author.name} Confirm the fight')
         
         winner, pipo1["hp"], pipo2["hp"], pipo3["hp"], pipo4["hp"] = await self.fight2v2(ctx, team1_tank, team1_dps, team2_tank, team2_dps)
+        self.db["users"].update_one({"id": user1["id"]}, {"$set": user1})
+        self.db["users"].update_one({"id": user2["id"]}, {"$set": user2})
         
-        #if pipo_win1["name"] == pipo1["name"]:
-        #    pipo1["hp"] = pipo_win1["hp"]
-        #    pipo2["hp"] = pipo_win2["hp"]
-        #    pipo3["hp"] = pipo_lose1["hp"]
-        #    pipo4["hp"] = pipo_lose2["hp"]
-        #else:
-        #    pipo1["hp"] = pipo_lose1["hp"]
-        #    pipo2["hp"] = pipo_lose2["hp"]
-        #    pipo3["hp"] = pipo_win1["hp"]
-        #    pipo4["hp"] = pipo_win2["hp"]
-        #self.db["users"].update_one({"id": user1["id"]}, {"$set": user1})
-        #self.db["users"].update_one({"id": user2["id"]}, {"$set": user2})
-        #
+        if winner == 'team1':
+            await self.postgame(ctx, winner=pipo1, loser=pipo3, user_win= user1, leaderboards=True)
+            await self.postgame(ctx, winner=pipo2, loser=pipo4, user_win= user1)
+            await self.postgame(ctx, winner=pipo3, loser=pipo1, user_lose= user2, loser_to=True)
+            await self.postgame(ctx, winner=pipo4, loser=pipo2, user_lose= user2, loser_to=True)
+        else:
+            await self.postgame(ctx, winner=pipo3, loser=pipo1, user_lose= user2, leaderboards=True)
+            await self.postgame(ctx, winner=pipo4, loser=pipo2, user_lose= user2)
+            await self.postgame(ctx, winner=pipo1, loser=pipo3, user_win= user1, loser_to=True)
+            await self.postgame(ctx, winner=pipo2, loser=pipo4, user_win= user1, loser_to=True)
+            
         pipo1["in_combat"] = False
         pipo2["in_combat"] = False
         pipo3["in_combat"] = False
@@ -245,7 +251,7 @@ class Combat(commands.Cog):
             await ctx.send(f"{pipo1} not found")
             return
         
-        #if pipo1["in_combat"]:
+        if pipo1["in_combat"]:
             await ctx.send(f"{pipo1['name']} is already in combat")
             return
         
@@ -263,10 +269,12 @@ class Combat(commands.Cog):
         
         self.db["users"].update_one({"id": user["id"]}, {"$set": user})
         if winner == 'pipo1':
-            await self.postgame(ctx, winner= pipo1, loser = pipo2, user_win = user)
+            await self.postgame(ctx, pipo1 = pipo1, pipo2 = pipo2, user = user)
         if winner == 'pipo2':
             if pipo1["lvl"] < 3:
-                await self.postgame(ctx, winner= pipo2, loser = pipo1, user_lose = user, loser_to=True)
+                await self.postgame(ctx, pipo1 = pipo1, pipo2 = pipo2, user = user)
+            else:
+                await self.postgame(ctx, pipo1 = pipo1, pipo2 = pipo2, user = user, loser_to=True)
             self.db["wild_pipos"].insert_one(pipo2)
             
         pipo1["in_combat"] = False
@@ -294,13 +302,15 @@ class Combat(commands.Cog):
         if await self.precombat(ctx, pipo1, pipo2) == "cancel":
             return
         
-        winner, pipo1_hp, pipo2_hp = await self.alt_fight(ctx, pipo1, pipo2)
+        winner, pipo1["hp"], pipo2["hp"] = await self.alt_fight(ctx, pipo1, pipo2)
+        self.db["users"].update_one({"id": user["id"]}, {"$set": user})
         
-        pipo1["hp"] = pipo1_hp
-        await ctx.send(f"{pipo1['name']} HP: {pipo1['hp']}")
         if winner == 'pipo1':
-            await self.postgame(ctx,ctx,winner= pipo1, loser = pipo2, user_win = user)
+            await self.postgame(ctx, pipo1 = pipo1, pipo2 = pipo2, user = user)
             self.db["wild_pipos"].delete_one({"name": wild_pipo})
+        else:
+            await self.postgame(ctx, pipo1 = pipo1, pipo2 = pipo2, user = user, loser_to=True)
+            self.db["wild_pipos"].update_one({"name": wild_pipo}, {"$set": pipo2})
         
         pipo1["in_combat"] = False
         self.db["users"].update_one({"id": user["id"]}, {"$set": user})
@@ -368,8 +378,11 @@ class Combat(commands.Cog):
         winner, pipo1["hp"], pipo2["hp"], pipo3["hp"], pipo4["hp"] = await self.fight2v2(ctx, team1_tank, team1_dps, team2_tank, team2_dps)
         self.db["users"].update_one({"id": user["id"]}, {"$set": user})
         if winner == 'team1':
-            await self.postgame(ctx, winner=pipo1, loser=pipo3, user_win= user)
-            await self.postgame(ctx, winner=pipo2, loser=pipo4, user_win= user)
+            await self.postgame(ctx, pipo1 = pipo1, pipo2 = pipo3, user = user)
+            await self.postgame(ctx, pipo1 = pipo2, pipo2 = pipo4, user = user)
+        else:
+            await self.postgame(ctx, winner=pipo1, loser=pipo3, user= user, loser_to=True)
+            await self.postgame(ctx, winner=pipo2, loser=pipo4, user= user, loser_to=True)
         pipo1["in_combat"] = False
         pipo2["in_combat"] = False
         self.db["users"].update_one({"id": user["id"]}, {"$set": user})
@@ -695,6 +708,24 @@ class Combat(commands.Cog):
         atk_2 = pipo2["attack"]
         poison_1 = 0
         poison_2 = 0
+        dinamite = None
+        pipo_explotion = None
+        # Dinamite Vest
+        async def dinamite_vest(pipo):
+            if pipo["item"] == "Dinamite Vest":
+                dmg = pipo["attack"]
+                pipo1["hp"] -= dmg
+                pipo2["hp"] -= dmg
+                await ctx.send(f"{pipo['name']} uses Dinamite Vest!")
+                await ctx.send(f"{pipo1['name']} and {pipo2['name']} take {dmg} damage!")
+                if pipo1["hp"] <= 0:
+                    pipo1["hp"] = 0
+                if pipo2["hp"] <= 0:
+                    pipo2["hp"] = 0
+                if pipo1["hp"] <= 0 and pipo2["hp"] <= 0:
+                    await ctx.send(f"{pipo1['name']} and {pipo2['name']} fainted in the explosion!")
+                    return "end", pipo
+                
         while pipo1["hp"] > 0 and pipo2["hp"] > 0:
             round += 1
             await ctx.send(f"----------------------------------------------------------------------------------------")
@@ -707,6 +738,8 @@ class Combat(commands.Cog):
             if pipo1["hp"] <= 0:
                 pipo1["hp"] = 0
                 await ctx.send(f"{pipo1['name']} fainted from poison!")
+                # Dinamite Vest
+                end, pipo_explotion = await dinamite_vest(pipo1)
                 break
             if poison_2 > 0:
                 pipo2["hp"] -= poison_2
@@ -714,6 +747,8 @@ class Combat(commands.Cog):
             if pipo2["hp"] <= 0:
                 pipo2["hp"] = 0
                 await ctx.send(f"{pipo2['name']} fainted from poison!")
+                # Dinamite Vest
+                end, pipo_explotion = await dinamite_vest(pipo2)
                 break
             
             #Berserk
@@ -746,15 +781,34 @@ class Combat(commands.Cog):
             
             # Regeneration
             async def regeneration(pipo):
+                if pipo["poisoned"]:
+                    await ctx.send(f"{pipo['name']} is poisoned and can't heal!")
+                    return
                 r = random.randint(1, 3)
                 if r == 1 or r == 2:
                     pipo["hp"] += 1
+                    if pipo["hp"] > pipo["max_hp"]:
+                        pipo["hp"] = pipo["max_hp"]
                     await ctx.send(f"{pipo['name']} regenerates 1 HP!")
             if pipo1["passive"] == "Regeneration":
                 await regeneration(pipo1)
             if pipo2["passive"] == "Regeneration":
                 await regeneration(pipo2)
             
+            # Beer
+            async def beer(pipo):
+                if pipo["poisoned"]:
+                    await ctx.send(f"{pipo['name']} is poisoned and can't drink a beer!")
+                    return
+                if random.randint(1, 5) == 1:
+                    pipo["hp"] +1
+                    if pipo["hp"] > pipo["max_hp"]:
+                        pipo["hp"] = pipo["max_hp"]
+                    await ctx.send(f"{pipo['name']} drinks a beer!")
+            if pipo1["item"] == "Beer":
+                await beer(pipo1)
+            if pipo2["item"] == "Beer":
+                await beer(pipo2)
             
             # Rapid Metabolism
             async def rapid_metabolism(pipo):
@@ -776,6 +830,10 @@ class Combat(commands.Cog):
             else:
                 piposlow = pipo1
             
+            #Poison Dart off
+            pipo1["poisoned"] = False
+            pipo2["poisoned"] = False
+            
             # Attack
             async def attack(pipoatk, pipodef):
                 dmg  = await damage(pipoatk, pipodef)
@@ -796,6 +854,8 @@ class Combat(commands.Cog):
                 if pipodef["hp"] <= 0:
                     pipodef["hp"] = 0
                     await ctx.send(f"{pipodef['name']} fainted!")
+                    # Dinamite Vest
+                    end, pipo_explotion = await dinamite_vest(pipodef)
                 return pipodef["hp"], pipoatk["hp"]
             
             
@@ -810,6 +870,15 @@ class Combat(commands.Cog):
                     await ctx.send(f"{pipofast['name']} recovers {cl(pipofast['attack']/2)} HP!")
                 else:
                     piposlow["hp"], pipofast["hp"] = await attack(pipofast, piposlow)
+                    
+                    # Poison Dart
+                    if pipofast["item"] == "Poison Dart":
+                        r = random.randint(1, 3)
+                        if r == 1 or r == 2:
+                            piposlow["poisoned"] = True
+                            await ctx.send(f"{pipofast['name']} throws a Poison Dart!")
+                            await ctx.send(f"{piposlow['name']} is poisoned!")
+                    
                     # Poisoneous Skin
                     if pipofast["passive"] == "Poisoneous Skin" and random.randint(1, 3) == 1:
                         if pipofast["name"] == pipo1["name"]:
@@ -832,6 +901,15 @@ class Combat(commands.Cog):
                     await ctx.send(f"{piposlow['name']} recovers {cl(piposlow['attack']/2)} HP!")
                 else:
                     pipofast["hp"], piposlow["hp"] = await attack(piposlow, pipofast)
+                    
+                    # Poison Dart
+                    if piposlow["item"] == "Poison Dart":
+                        r = random.randint(1, 3)
+                        if r == 1 or r == 2:
+                            pipofast["poisoned"] = True
+                            await ctx.send(f"{piposlow['name']} throws a Poison Dart!")
+                            await ctx.send(f"{pipofast['name']} is poisoned!")
+                    
                     # Poisoneous Skin
                     if piposlow["passive"] == "Poisoneous Skin" and random.randint(1, 3) == 1:
                         if piposlow["name"] == pipo1["name"]:
@@ -854,7 +932,20 @@ class Combat(commands.Cog):
         await ctx.send(f"----------------------------------------------------------------------------------------")
         await ctx.send("COMBAT ENDED!")
         
-        if pipo1["hp"] <= 0:
+        # Dinamite Vest
+        if dinamite is not None and pipo1["hp"] <= 0 and pipo2["hp"] <= 0:
+            if pipo_explotion["name"] == pipo1["name"]:
+                await ctx.send(f"{pipo1['name']} and {pipo2['name']} fainted in the explosion of {pipo_explotion['name']}!")
+                await ctx.send(f"{pipo_explotion['name']} wins!")
+                return 'pipo1', pipo1["hp"], pipo2["hp"]
+            else:
+                await ctx.send(f"{pipo1['name']} and {pipo2['name']} fainted in the explosion of {pipo_explotion['name']}!")
+                await ctx.send(f"{pipo_explotion['name']} wins!")
+                return 'pipo2', pipo1["hp"], pipo2["hp"]
+        
+        
+        
+        if pipo1["hp"] <= 0 :
             await ctx.send(f"{pipo1['name']} fainted!")
             await ctx.send(f"{pipo2['name']} wins!")
             return 'pipo2', pipo1["hp"], pipo2["hp"]
@@ -908,6 +999,20 @@ class Combat(commands.Cog):
         
         while team1_total_hp > 0 and team2_total_hp > 0:
             round += 1
+            # Dancing Shoes
+            if team1_dps["passive"] == "Dancing Shoes" and team1_dps["hp"] < cl(team1_dps["max_hp"]/2):
+                team1_dps, team1_tank = team1_tank, team1_dps
+                await ctx.send(f"{team1_dps['name']} activates Dancing Shoes!")
+            if team1_tank["passive"] == "Dancing Shoes" and team1_tank["hp"] < cl(team1_tank["max_hp"]/2):
+                team1_dps, team1_tank = team1_tank, team1_dps
+                await ctx.send(f"{team1_tank['name']} activates Dancing Shoes!")
+            if team2_dps["passive"] == "Dancing Shoes" and team2_dps["hp"] < cl(team2_dps["max_hp"]/2):
+                team2_dps, team2_tank = team2_tank, team2_dps
+                await ctx.send(f"{team2_dps['name']} activates Dancing Shoes!")
+            if team2_tank["passive"] == "Dancing Shoes" and team2_tank["hp"] < cl(team2_tank["max_hp"]/2):
+                team2_dps, team2_tank = team2_tank, team2_dps
+                await ctx.send(f"{team2_tank['name']} activates Dancing Shoes!")
+            
             
             # Poisoneous Skin
             async def poison_dmg(pipo, poison):
@@ -1012,6 +1117,10 @@ class Combat(commands.Cog):
                     return
                 if pipo in team1:
                     defender = random.randint(1,4)
+                    # Mortar
+                    if pipo["item"] == "Mortar":
+                        defender = random.randint(1, 2)
+                        
                     if team2_tank["hp"]<=0:
                         defender = 1
                     if team1_dps["hp"] <= 0:
@@ -1057,6 +1166,10 @@ class Combat(commands.Cog):
                             await ctx.send(f"{team2_tank['name']} fainted!")
                 else:
                     defender = random.randint(1,4)
+                    # Mortar
+                    if pipo["item"] == "Mortar":
+                        defender = random.randint(1, 2)
+                        
                     if team1_tank["hp"]<=0:
                         defender = 1
                     if team1_dps["hp"] <= 0:
@@ -1171,41 +1284,46 @@ class Combat(commands.Cog):
             return "team1", team1_tank["hp"], team1_dps["hp"], team2_tank["hp"], team2_dps["hp"]
     
     #exp gain and gold after combat and leaderboards
-    async def postgame(self, ctx, winner, loser, loser_to = False, g = 0, user_win = None, user_lose = None, leaderboards = False):
+    async def postgame(self, ctx, pipo1, pipo2, user, loser = False, leaderboards = False):
         
         exp_gold = {1:2, 2:5, 3:8, 4:10, 5:15, 6:20, 7:32, 8:50, 9:80, 10:100, 11:150, 12:200, 13:320, 14:500, 15:800, 16:1000, 17:1500, 18:2000, 19:3200, 20:5000}
-        exp = exp_gold[loser["lvl"]]
-        gold = exp_gold[loser["lvl"]]
-        if g > 0:
-            gold = g
+        
+        exp = exp_gold[pipo2["lvl"]]
+        
+        # Training Sheet
+        if pipo1["item"] == "Training Sheet":
+            exp = cl(exp*1.25)
+            
+        gold = exp_gold[pipo2["lvl"]]
+        
+        # Lucky Coin
+        if pipo1["item"] == "Lucky Coin":
+            gold = cl(gold*1.25)
+            
+        if loser:
+            exp = cl(exp/2)
+            gold = cl(gold/2)
+        
         #gold
-        if not user_win == None:
-            self.db["users"].update_one({"id": user_win["id"]}, {"$inc": {"gold": gold}})
-            await ctx.send(f"{user_win['name']} gained {gold} gold")
+        if not user == None:
+            self.db["users"].update_one({"id": user["id"]}, {"$inc": {"gold": gold}})
+            await ctx.send(f"{user['name']} gained {gold} gold")
         
         #exp
-        if not user_win == None:
-            user = self.db["users"].find_one({"id": user_win["id"]})
-            pipo = next((pipo for pipo in user["pipos"] if pipo["name"] == winner["name"]), None)
+        if not user == None:
+            user = self.db["users"].find_one({"id": user["id"]})
+            pipo = next((pipo for pipo in user["pipos"] if pipo["name"] == pipo1["name"]), None)
             pipo["exp"] += exp
-            self.db["users"].update_one({"id": user_win["id"]}, {"$set": {"pipos": user["pipos"]}})
-            await ctx.send(f"{winner['name']} gained {exp} exp")
-        
-        #loser exp
-        if loser_to:
-            user = self.db["users"].find_one({"id": user_lose["id"]})
-            pipo = next((pipo for pipo in user["pipos"] if pipo["name"] == loser["name"]), None)
-            pipo["exp"] += exp
-            self.db["users"].update_one({"id": user_lose["id"]}, {"$set": {"pipos": user["pipos"]}})
-            await ctx.send(f"{loser['name']} gained {exp} exp")
-        
+            self.db["users"].update_one({"id": user["id"]}, {"$set": {"pipos": user["pipos"]}})
+            await ctx.send(f"{pipo1['name']} gained {exp} exp")
+            
         #leaderboards
         if leaderboards:
-            if self.db["leaderboards"].find_one({"id": user_win["id"]}) is None:
-                self.db["leaderboards"].insert_one({"id": user_win["id"], "points": exp})
+            if self.db["leaderboards"].find_one({"id": user["id"]}) is None:
+                self.db["leaderboards"].insert_one({"id": user["id"], "points": exp})
             else:
-                point = self.db["leaderboards"].find_one({"id": user_win["id"]})["points"] + exp
-                self.db["leaderboards"].update_one({"id": user_win["id"]}, {"$set": {"points": point}})
+                point = self.db["leaderboards"].find_one({"id": user["id"]})["points"] + exp
+                self.db["leaderboards"].update_one({"id": user["id"]}, {"$set": {"points": point}})
     
     
 async def setup(client):

@@ -82,6 +82,7 @@ async def alt_velocity(pipo1: dict, pipo2: dict, pipo3:dict = None, pipo4:dict =
     ff2 = random.randint(0, 3)
     ff3 = random.randint(0, 3)
     ff4 = random.randint(0, 3)
+    
     if pipo1["passive"] == "Fight First":
         pipo1["speed"] += ff1
     if pipo2["passive"] == "Fight First":
@@ -94,7 +95,11 @@ async def alt_velocity(pipo1: dict, pipo2: dict, pipo3:dict = None, pipo4:dict =
         if pipo4["passive"] == "Fight First":
             pipo4["speed"] += ff4
         vel.append(pipo4)
+        
     random.shuffle(vel)
+    # Trick Coin
+    vel = sorted(vel, key=lambda x: x["item"]=="Tricked Coin", reverse=True)
+    
     vel = sorted(vel, key=lambda x: x['speed'], reverse=True)
     if pipo1["passive"] == "Fight First":
         pipo1["speed"] -= ff1
